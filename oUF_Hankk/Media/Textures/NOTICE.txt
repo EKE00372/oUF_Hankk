@@ -1,0 +1,63 @@
+Texture resources used by oUF_Hankk
+
+raidicons.blp is an unmodified copy from the Hank author-version backup
+oUF_Hank-v3.0.11.zip, oUF_Hank_v3/textures/raidicons.blp:
+https://www.wowinterface.com/downloads/info16239-oUF_Hank.html
+SHA-256: d6bc522b7b8392efcc6fc6a049ffe632c14bc4ba719f3e4978825074dae3a087
+The backup provides no separate license or per-asset author statement.
+It is not relicensed under this project's MIT license or the font OFL.
+Confirm distribution rights before public release. See
+Artwork/Source/Original/oUF_Hank-v3.0.11/SOURCE.md in the development repo.
+
+Resources/combo.tga, Resources/holypower.tga and Resources/soulshards.tga
+are high-resolution redraws based on that author-version backup's resource
+shapes: round pip, horned holy-power cross and diagonal soul shard.
+Each 512x128 atlas has 128x128 base, fill and tintable outer-glow cells,
+followed by an unused transparent cell. The new curves, antialiasing,
+12px source outline, soft shadow and glow replace the low-resolution BLPs;
+the shard also has new grayscale facets. Lua supplies resource colors.
+Original source SHA-256:
+combo.blp: 1c7f7117ca7eb425124aeb18e9392dda5fd4cf8bf725c00e84eca330c20c4730
+holypower.blp: 41c3b54fd4bbe0201bd893c80692f6a5e23dca81ba7379e8772e2e012916e0f7
+soulshards.blp: 1836565d5e065f4595117c6c663cc1c2e3cfa1a1414d652e6c0ba9026b4254ce
+The same attribution and unconfirmed distribution rights above apply.
+The originals are not the fan update's shard/shard_bg pair. Unmodified
+sources and the retired runtime version remain in Artwork, outside the
+addon package. Build parameters, output hashes and attribution are in
+Artwork/Tools/texture/resources.json and SOURCES.md in the development repo.
+
+statusicons.tga is a brightened, tintable derivative of statusicons.blp
+from the same author-version backup, oUF_Hank_v3/textures/statusicons.blp.
+Hank's combat, resting, leader, PvP and assistant bodies keep their original
+24px size, now padded by 4px on each side in 32px cells. Their grey artwork is remapped to white;
+the colored body keeps its original alpha. Only the outer black edge is
+gently trimmed with a 30% blend toward a one-pixel inset; inner black details
+are protected. A black soft shadow (sigma 1.4px, opacity 0.65) extends into
+the padding without changing colored pixels or the solid inner rim. Cell
+edges and unused cells are transparent. Lua supplies colors.
+The same attribution and unconfirmed distribution rights above apply.
+Source SHA-256: f16ff5b11a01f1c8965d20a49cc14e6318750014054bd6b970b528f1d8c5c2ec
+Output SHA-256: 46a04b372c206c5c705bf34a3fd04709f8e2d6b9852c75f7c63b038a1a9ee004
+
+glow.tga, spark.tga and aurashadow.tga are unmodified copies from oUF_Ruri:
+https://github.com/EKE00372/oUF_Ruri/tree/b25ce092c3b52c019459596549cc3a1616ddd58f/Media
+aurashadow.tga SHA-256: 39107bbf002a731d2530860b5543ef5ae509886b18fad85c4e081dbf7fe8a1ca
+
+The border/shadow helpers in API.lua and the castbar styling/native-binding
+approach in Core/Castbar.lua are adapted from oUF_Ruri at the same revision.
+The power palette and named/numeric color setup in Tags.lua are also adapted
+from oUF_Ruri's Tags.lua at the same revision:
+https://github.com/EKE00372/oUF_Ruri/blob/b25ce092c3b52c019459596549cc3a1616ddd58f/Tags.lua
+Hankk uses its own layout, font, castbar colors and remaining/total time format.
+Core/Auras.lua adapts Ruri's aura border/shadow appearance, native duration
+formatter and unit-relation update pattern from Core/Auras.lua at the same
+revision. Hankk uses its own font, 20-unit icons, target/focus containers,
+group limits and focus filters; no Ruri spell lists are included.
+
+The upstream license is preserved in Ruri-LICENSE.txt. The project license
+does not replace upstream terms or establish rights to any third-party asset.
+Individual texture authorship/license was not documented in the source;
+confirm the relevant rights before public distribution.
+
+See Artwork/Tools/texture/SOURCES.md in the development repository for hashes
+and source details. Development tools and previews are not addon runtime files.
