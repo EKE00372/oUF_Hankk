@@ -1,0 +1,9 @@
+Digit artwork is reconstructed from textures/digits.blp in:
+https://github.com/brendanblackwood/oUF_Hank
+Source commit: 87b094acb85171c816afb912604a32e8f65e7e51
+Original addon credits: Hank (author), Gwyd (maintainer).
+
+High-resolution reconstruction and layer separation: oUF_Hankk, 2026.
+The source checkout does not provide an explicit per-asset license.
+This notice does not relicense the artwork under MIT or the font OFL.
+Confirm upstream artwork permissions before public distribution.
