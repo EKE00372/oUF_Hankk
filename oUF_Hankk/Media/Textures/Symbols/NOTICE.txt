@@ -1,0 +1,13 @@
+Percent and status artwork reconstructed from Hank / hankthetank's original digits.blp.
+Original addon page: https://www.wowinterface.com/downloads/info16239-oUF_Hank.html
+Local source: oUF_Hank-v3.0.11.zip / oUF_Hank_v3/textures/digits.blp
+BLP SHA-256: f87f122d9069bc7910d4fc62e039e2b2bc786a4e21641d4cd925bd63a0b5dd0a
+
+High-resolution reconstruction and layer separation: oUF_Hankk, 2026.
+Runtime files: percent.tga, skull.tga, cross.tga, ghost.tga and offline.tga.
+Percent and skull have separate base and water-fill layers.
+The three status icons are fixed artwork without a water-fill layer.
+The original backup does not include an explicit per-asset license.
+This notice does not relicense the artwork under MIT or the font OFL.
+Confirm upstream artwork permissions before public distribution.
+Build details are kept in Artwork/Tools/texture/SOURCES.md and symbols.json.

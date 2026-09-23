@@ -9,35 +9,50 @@ It is not relicensed under this project's MIT license or the font OFL.
 Confirm distribution rights before public release. See
 Artwork/Source/Original/oUF_Hank-v3.0.11/SOURCE.md in the development repo.
 
-Resources/combo.tga, Resources/holypower.tga and Resources/soulshards.tga
+Resources/combo.tga, Resources/holypower.tga, Resources/soulshards.tga and Resources/totems.tga
 are high-resolution redraws based on that author-version backup's resource
-shapes: round pip, horned holy-power cross and diagonal soul shard.
+shapes: round pip, horned holy-power cross diagonal soul shard and broad totem pillar.
 Each 512x128 atlas has 128x128 base, fill and tintable outer-glow cells,
 followed by an unused transparent cell. The new curves, antialiasing,
 12px source outline, soft shadow and glow replace the low-resolution BLPs;
-the shard also has new grayscale facets. Lua supplies resource colors.
+the shard also has broad, high-contrast grayscale facets and a bright ridge.
+Its fill coverage, base and glow are unchanged by the facet revision.
+Lua supplies resource colors.
 Original source SHA-256:
 combo.blp: 1c7f7117ca7eb425124aeb18e9392dda5fd4cf8bf725c00e84eca330c20c4730
 holypower.blp: 41c3b54fd4bbe0201bd893c80692f6a5e23dca81ba7379e8772e2e012916e0f7
 soulshards.blp: 1836565d5e065f4595117c6c663cc1c2e3cfa1a1414d652e6c0ba9026b4254ce
+totems.blp: 0d286a00b707b828213f05b7aeaad39b4bf3c9fca38313014b2cfc0aa0f45ded
 The same attribution and unconfirmed distribution rights above apply.
 The originals are not the fan update's shard/shard_bg pair. Unmodified
 sources and the retired runtime version remain in Artwork, outside the
 addon package. Build parameters, output hashes and attribution are in
-Artwork/Tools/texture/resources.json and SOURCES.md in the development repo.
+Artwork/Tools/texture/resources.json, maelstrom.json and SOURCES.md in the development repo.
 
-statusicons.tga is a brightened, tintable derivative of statusicons.blp
+Resources/arcane.tga derives from that redrawn combo circle, retaining its
+base, glow and fill coverage. It adds grayscale sphere shading and a soft
+white star in the fourth cell for Mage resources. The user's native Mage
+screenshot inspired the highlight; no Blizzard texture pixels were copied.
+The same source attribution and unconfirmed distribution rights apply.
+Build parameters and hashes: Artwork/Tools/texture/arcane.json and SOURCES.md.
+SHA-256: 797de20856063ede3585d592cedc238387a96fd1304539a90f9126bb7af9f31b
+
+statusicons.tga is a high-resolution, tintable reconstruction of the shapes in statusicons.blp
 from the same author-version backup, oUF_Hank_v3/textures/statusicons.blp.
-Hank's combat, resting, leader, PvP and assistant bodies keep their original
-24px size, now padded by 4px on each side in 32px cells. Their grey artwork is remapped to white;
-the colored body keeps its original alpha. Only the outer black edge is
-gently trimmed with a 30% blend toward a one-pixel inset; inner black details
-are protected. A black soft shadow (sigma 1.4px, opacity 0.65) extends into
-the padding without changing colored pixels or the solid inner rim. Cell
-edges and unused cells are transparent. Lua supplies colors.
+The resting icon uses three clean geometric Zs, individually rotated toward
+the original directions, instead of tracing low-resolution raster edges.
+The crown has four tips and a smooth curved base. Combat, PvP and assistant
+keep the v6 hand-authored bodies. All use 4x sampling. The atlas is 1024x128, with
+eight 128px cells. Display geometry stays at 24-unit slots, plus 4 units of
+padding on each side. An 8px source rim is 2 UI units at the default size.
+White bodies and diffuse white halos take the same Lua tint; the black rim
+and facial details remain black. Near/far halos use sigma 4/10 and opacity
+0.42/0.52, with 5px far spread and an 8px smooth edge fade. Cell boundaries
+and unused cells are transparent. Previous materials and recipes remain
+in Artwork/Tools/texture/variants; parameters and tests are in SOURCES.md.
 The same attribution and unconfirmed distribution rights above apply.
 Source SHA-256: f16ff5b11a01f1c8965d20a49cc14e6318750014054bd6b970b528f1d8c5c2ec
-Output SHA-256: 46a04b372c206c5c705bf34a3fd04709f8e2d6b9852c75f7c63b038a1a9ee004
+Output SHA-256: 14372ee09b2a8980cca7571011fd7d262cbb2c8a71f33c3c80a37e4868ebc0af
 
 glow.tga, spark.tga and aurashadow.tga are unmodified copies from oUF_Ruri:
 https://github.com/EKE00372/oUF_Ruri/tree/b25ce092c3b52c019459596549cc3a1616ddd58f/Media
