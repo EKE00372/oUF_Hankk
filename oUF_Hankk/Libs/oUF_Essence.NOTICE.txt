@@ -1,0 +1,9 @@
+oUF_Essence.lua is copied from oUF_Ruri by EK and its contributors.
+Source: https://github.com/EKE00372/oUF_Ruri/blob/cb7e233a60a892c1a16f477d4d49b66b0d3c1abe/Libs/oUF_Essence.lua
+Source SHA256: 40a12a17acd2dc74bf3c525f9b344a173bae9db192310459893d63477d6961e4
+Local SHA256 (LF, one final newline): 190373a481c47760dad70a3c6d5e492057ddb64bfe68a01be51eae2b335e59b4
+No logic changes; line endings and trailing whitespace at EOF may differ.
+Original license: https://github.com/EKE00372/oUF_Ruri/blob/cb7e233a60a892c1a16f477d4d49b66b0d3c1abe/LICENSE
+The original license is included in oUF_Essence.LICENSE.txt.
+This file is not covered by Hankk's license. Public redistribution permission
+for this extracted component has not been independently confirmed.
