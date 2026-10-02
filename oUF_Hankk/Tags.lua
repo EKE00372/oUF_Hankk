@@ -89,7 +89,7 @@ oUF.Tags.Events["hankk:otherpower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DI
 -- 啟用簡化數值顯示時，與隊友血量一樣省略百分號。
 local partyManaColor = oUF.colors.power.MANA:GenerateHexColorMarkup()
 oUF.Tags.Methods["hankk:partypower"] = function(unit)
-	local role = _FRAME.PreviewRole or UnitGroupRolesAssigned(_FRAME.PartyUnit)
+	local role = UnitGroupRolesAssigned(_FRAME.PartyUnit)
 	if role ~= "HEALER" then return "" end
 
 	_FRAME.PowerValue:SetAlpha(UnitPowerPercent(unit, Enum.PowerType.Mana, false, powerAlphaCurve))

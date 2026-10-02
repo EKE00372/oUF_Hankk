@@ -38,15 +38,6 @@ if locale == "zhTW" then
 	L.Unchanged = "修改後需重載套用。"
 	L.Combat = "請在戰鬥結束後重載。"
 
-	L.PreviewHelp = "Hankk：/hanktest boss、/hanktest arena、/hanktest party [專精ID] 開啟預覽；/hanktest off 全部關閉。"
-	L.PreviewCombat = "Hankk：請在戰鬥結束後切換預覽。"
-	L.PreviewInvalidSpec = "Hankk：沒有這個專精ID。輸入 /hanktest party 看四個範例，或 /hanktest party 264 指定圖示。"
-	L.PreviewForeverArena = "Hankk：FOREVER 不提供競技場框架預覽。"
-	L.PreviewInArena = "Hankk：請離開競技場後再開啟預覽。"
-	L.PreviewLabel = "%s預覽（目前目標）"
-	L.PreviewOn = "Hankk：已開啟%s預覽。請選取目標；/hanktest off 全部關閉，重載或換場景也會關閉。"
-	L.PreviewOff = "Hankk：已關閉所有框架預覽。"
-
 elseif locale == "zhCN" then
 	L.Style = "样式"
 	L.Frames = "框架"
@@ -81,15 +72,6 @@ elseif locale == "zhCN" then
 	L.Saved = "已保存，重载后应用。"
 	L.Unchanged = "修改后需重载应用。"
 	L.Combat = "请在战斗结束后重载。"
-
-	L.PreviewHelp = "Hankk：/hanktest boss、/hanktest arena、/hanktest party [专精ID] 开启预览；/hanktest off 全部关闭。"
-	L.PreviewCombat = "Hankk：请在战斗结束后切换预览。"
-	L.PreviewInvalidSpec = "Hankk：没有这个专精ID。输入 /hanktest party 看四个示例，或 /hanktest party 264 指定图标。"
-	L.PreviewForeverArena = "Hankk：FOREVER 不提供竞技场框架预览。"
-	L.PreviewInArena = "Hankk：请离开竞技场后再开启预览。"
-	L.PreviewLabel = "%s预览（当前目标）"
-	L.PreviewOn = "Hankk：已开启%s预览。请选择目标；/hanktest off 全部关闭，重载或切换场景也会关闭。"
-	L.PreviewOff = "Hankk：已关闭所有框架预览。"
 else
 	L.Style = "Style"
 	L.Frames = "Frames"
@@ -124,13 +106,4 @@ else
 	L.Saved = "Saved. Reload to apply."
 	L.Unchanged = "Reload to apply changes."
 	L.Combat = "Reload after combat."
-
-	L.PreviewHelp = "Hankk: /hanktest boss, /hanktest arena, /hanktest party [specID] to preview; /hanktest off closes all previews."
-	L.PreviewCombat = "Hankk: change previews after combat."
-	L.PreviewInvalidSpec = "Hankk: unknown spec ID. Use /hanktest party for four samples, or /hanktest party 264 for a specific icon."
-	L.PreviewForeverArena = "Hankk: arena frame previews are unavailable in FOREVER."
-	L.PreviewInArena = "Hankk: leave the arena before opening previews."
-	L.PreviewLabel = "%s preview (current target)"
-	L.PreviewOn = "Hankk: %s preview enabled. Select a target; /hanktest off closes all previews. Reloading or changing zones also closes them."
-	L.PreviewOff = "Hankk: all frame previews closed."
 end

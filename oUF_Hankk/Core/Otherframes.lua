@@ -47,9 +47,9 @@ local specIcons = {
 	[104] = {{0.25, 0.375, 0, 0.25}, 1, 0.17578125, 0.6171875, 0.20703125},	-- 守護者
 	[105] = {{0.375, 0.5, 0, 0.25}, 1, 0.18359375, 0.62109375, 0.19140625},	-- 恢復
 	-- Hunter / 獵人
-	[253] = {{0.5, 0.625, 0, 0.25}, 1, 0.203125, 0.578125, 0.16015625},	-- 野獸控制
+	[253] = {{0.5, 0.625, 0, 0.25}, 1, 0.203125, 0.578125, 0.16015625},		-- 野獸控制
 	[254] = {{0.625, 0.75, 0, 0.25}, 1, 0.2109375, 0.5859375, 0.1171875},	-- 射擊
-	[255] = {{0.75, 0.875, 0, 0.25}, 1, 0.1875, 0.67578125, 0.1640625},	-- 生存
+	[255] = {{0.75, 0.875, 0, 0.25}, 1, 0.1875, 0.67578125, 0.1640625},		-- 生存
 	-- Mage / 法師
 	[62] = {{0.875, 1, 0, 0.25}, 1, 0.16015625, 0.6484375, 0.1484375},		-- 秘法
 	[63] = {{0, 0.125, 0.25, 0.5}, 1, 0.171875, 0.65625, 0.15625},			-- 火焰
@@ -266,6 +266,7 @@ local function CreateOtherStyle(self, size)
 	self.Name = name
 	self:Tag(name, "[hankk:namecolor]"..G.NameTag.."|r")
 	if self.mystyle ~= "party" then
+		info:SetFrameLevel(self:GetFrameLevel() + 4)
 		-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
 		T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, info)
 		self.Castbar:SetPoint("LEFT", info, "LEFT", 1, 0)
@@ -282,21 +283,6 @@ local function CreateOtherStyle(self, size)
 	end
 	raidIcon:Hide()
 	self.RaidTargetIndicator = raidIcon
-end
-
-local function PlaceOther(frame, previous, position)
-	-- 預覽框建立後會換父框，因此資訊區與施法條在這裡一同設定層級。
-	frame.Info:SetFrameLevel(frame:GetFrameLevel() + 4)
-	local bar = frame.Castbar
-	local barLevel = frame:GetFrameLevel() + 7
-	bar:SetFrameLevel(barLevel)
-	bar.BarBG:SetFrameLevel(barLevel - 2)
-	bar.BarShadow:SetFrameLevel(barLevel - 1)
-	if previous then
-		frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -10)
-	else
-		frame:SetPoint(unpack(position))
-	end
 end
 
 --===================================================--
@@ -557,28 +543,9 @@ local function PostUpdatePartyThreat(element, unit, status, color)
 	end
 end
 
--- 預覽職責代表選中的圖案，不取提供血量與法力的目標職責。
--- 使用固定範例，也能在沒有正式服專精查詢的 FOREVER 顯示。
-local previewRoles = {
-	[66] = "TANK", [73] = "TANK", [104] = "TANK", [250] = "TANK", [268] = "TANK", [581] = "TANK",
-	[65] = "HEALER", [105] = "HEALER", [256] = "HEALER", [257] = "HEALER",
-	[264] = "HEALER", [270] = "HEALER", [1468] = "HEALER",
-}
-
-local function UpdatePartyPreview(frame)
-	SetSpecIcon(frame.Health, frame.PreviewSpecID)
-	local role = previewRoles[frame.PreviewSpecID] or "DAMAGER"
-	frame.PreviewRole = role
-	frame.PreviewRoleIndicator:SetTexture((role == "TANK" and G.media.role_tank)
-		or (role == "HEALER" and G.media.role_healer) or G.media.role_dps)
-	frame.PreviewRoleIndicator:Show()
-end
-
 local function CreatePartyStyle(self, unit)
 	-- 法力標籤固定用這位隊友判斷職責，載具替換顯示單位時不改查載具職責。
-	-- 讀取目標的預覽只使用範例職責，不啟用隊友查裝或仇恨元素。
-	local preview = unit == "target"
-	if preview then self.PreviewRole = "DAMAGER" else self.PartyUnit = unit end
+	self.PartyUnit = unit
 	self.mystyle = "party"
 	CreateOtherStyle(self, C.PartySize)
 	-- 隊友標記顯示時才讓名字左移；隊友沒有施法條需要一起調整。
@@ -612,7 +579,7 @@ local function CreatePartyStyle(self, unit)
 	self:Tag(self.PowerValue, "[hankk:partypower]")
 
 	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。
-	if not preview and F.GetHankkOption("ThreatHighlight") then
+	if F.GetHankkOption("ThreatHighlight") then
 		local indicator = CreateFrame("Frame", nil, self)
 		indicator:EnableMouse(false)
 		indicator.Glow = self.Health.Glow
@@ -629,46 +596,42 @@ local function CreatePartyStyle(self, unit)
 	role:SetDesaturated(true)
 	role:SetTexCoord(0, 1, 0, 1)
 	role:Hide()
-	if preview then
-		self.PreviewRoleIndicator = role
-	else
-		-- 有暴雪原生更新器就交它套用自訂材質；沒有時，oUF 先選內建圖集，
-		-- 再依它回報的公開職責換成我們的材質。
-		role.tankAtlas = G.media.role_tank
-		role.healerAtlas = G.media.role_healer
-		role.damageAtlas = G.media.role_dps
-		if UnitFrameUtil and UnitFrameUtil.UpdateUnitFrameRoleIcon then
-			local state = {
-				roleIcon = role,
-				optionTable = {
-					displayRoleIcon = true,
-					textureMap = {
-						TANK = role.tankAtlas,
-						HEALER = role.healerAtlas,
-						DAMAGER = role.damageAtlas,
-						VEHICLE = "",
-					},
+	-- 有暴雪原生更新器就交它套用自訂材質；沒有時，oUF 先選內建圖集，
+	-- 再依它回報的公開職責換成我們的材質。
+	role.tankAtlas = G.media.role_tank
+	role.healerAtlas = G.media.role_healer
+	role.damageAtlas = G.media.role_dps
+	if UnitFrameUtil and UnitFrameUtil.UpdateUnitFrameRoleIcon then
+		local state = {
+			roleIcon = role,
+			optionTable = {
+				displayRoleIcon = true,
+				textureMap = {
+					TANK = role.tankAtlas,
+					HEALER = role.healerAtlas,
+					DAMAGER = role.damageAtlas,
+					VEHICLE = "",
 				},
-			}
-			role.Override = function(frame)
-				state.unit = frame.__unit
-				UnitFrameUtil.UpdateUnitFrameRoleIcon(state)
-			end
-		else
-			role.PostUpdate = function(element, assignedRole)
-				local texture
-				if assignedRole == Enum.LFGRole.Tank then texture = element.tankAtlas
-				elseif assignedRole == Enum.LFGRole.Healer then texture = element.healerAtlas
-				elseif assignedRole == Enum.LFGRole.Damage then texture = element.damageAtlas end
-				if texture then
-					element:SetTexture(texture)
-					element:SetTexCoord(0, 1, 0, 1)
-				end
+			},
+		}
+		role.Override = function(frame)
+			state.unit = frame.__unit
+			UnitFrameUtil.UpdateUnitFrameRoleIcon(state)
+		end
+	else
+		role.PostUpdate = function(element, assignedRole)
+			local texture
+			if assignedRole == Enum.LFGRole.Tank then texture = element.tankAtlas
+			elseif assignedRole == Enum.LFGRole.Healer then texture = element.healerAtlas
+			elseif assignedRole == Enum.LFGRole.Damage then texture = element.damageAtlas end
+			if texture then
+				element:SetTexture(texture)
+				element:SetTexCoord(0, 1, 0, 1)
 			end
 		end
-		self.GroupRoleIndicator = role
-		self.HankkPartySpec = {}
 	end
+	self.GroupRoleIndicator = role
+	self.HankkPartySpec = {}
 end
 
 --===================================================--
@@ -685,7 +648,11 @@ oUF:Factory(function(self)
 		-- 數量跟隨遊戲上限；建立後由 oUF 接管原生首領框的停用。
 		for index = 1, MAX_BOSS_FRAMES do
 			local frame = self:Spawn("boss"..index, "oUF_HankkBoss"..index)
-			PlaceOther(frame, previous, C.Position.Boss)
+			if previous then
+				frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -10)
+			else
+				frame:SetPoint(unpack(C.Position.Boss))
+			end
 			previous = frame
 		end
 	end
@@ -694,7 +661,11 @@ oUF:Factory(function(self)
 		self:SetActiveStyle("HankkArena")
 		for index = 1, 5 do
 			local frame = self:Spawn("arena"..index, "oUF_HankkArena"..index)
-			PlaceOther(frame, previous, C.Position.Arena)
+			if previous then
+				frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -10)
+			else
+				frame:SetPoint(unpack(C.Position.Arena))
+			end
 			previous = frame
 		end
 	end
@@ -736,125 +707,3 @@ oUF:Factory(function(self)
 		RegisterStateDriver(group, "visibility", "[group:raid] hide; [group:party] show; hide")
 	end
 end)
-
---===================================================--
--- Temporary target previews / 讀取目標的臨時預覽
---===================================================--
-
-local L = ns[5]
-local previews, previewEvents = {}, nil
-local previewNames = {boss = "Boss", arena = "Arena", party = "Party"}
-local previewSpecs = {264, 261, 258, 1480}
-
--- 預覽框保留供下次使用；關閉時停止監看單位，不讓它們自行重新出現。
-local function ClosePreview(preview)
-	if not preview then return end
-	UnregisterStateDriver(preview.group, "visibility")
-	preview.group:Hide()
-	for _, frame in ipairs(preview.frames) do frame:Disable() end
-end
-
-SlashCmdList.OUFHANKKTEST = function(message)
-	if InCombatLockdown() then print(L.PreviewCombat); return end
-	local command, argument = message:lower():match("^%s*(%S+)%s*(.-)%s*$")
-	if command == "off" and argument == "" then
-		for _, preview in pairs(previews) do ClosePreview(preview) end
-		if previewEvents then
-			previewEvents:UnregisterEvent("PLAYER_ENTERING_WORLD")
-			previewEvents:UnregisterEvent("PLAYER_REGEN_ENABLED")
-		end
-		print(L.PreviewOff)
-		return
-	end
-	local name = previewNames[command]
-	if not name or (command ~= "party" and argument ~= "") then print(L.PreviewHelp); return end
-	if command == "arena" and G.IsForever then print(L.PreviewForeverArena); return end
-	local specID
-	if command == "party" and argument ~= "" then
-		specID = tonumber(argument)
-		if not specIcons[specID or false] then print(L.PreviewInvalidSpec); return end
-	end
-
-	-- 競技場準備時可能還沒有 arena 單位，因此在競技場內不開啟預覽。
-	local _, instanceType = IsInInstance()
-	if instanceType == "arena" then print(L.PreviewInArena); return end
-	if command == "boss" then ClosePreview(previews.arena)
-	elseif command == "arena" then ClosePreview(previews.boss) end
-
-	local preview = previews[command]
-	if not preview then
-		local group = CreateFrame("Frame", "oUF_Hankk"..name.."Preview", UIParent, "SecureHandlerStateTemplate")
-		group:Hide()
-		if command == "party" then
-			group:SetSize(C.InfoWidth + C.PartySize, partyCount * C.PartySize + (partyCount - 1) * partyGap)
-			group:SetPoint(unpack(C.Position.Party))
-		else
-			group:SetAllPoints(UIParent)
-		end
-		preview = {group = group, frames = {}}
-		previews[command] = preview
-		local count = (command == "boss" and math.min(5, MAX_BOSS_FRAMES))
-			or (command == "arena" and 5) or partyCount
-		local active = oUF:GetActiveStyle()
-		oUF:SetActiveStyle("Hankk"..name)
-		for index = 1, count do
-			-- 另外建立讀取目標的副本，不改任何正式首領、競技場或隊友框的單位。
-			local frame = oUF:Spawn("target", "oUF_Hankk"..name.."Preview"..index)
-			frame:SetParent(group)
-			local previous = preview.frames[index - 1]
-			if command == "party" then
-				frame.Info:SetFrameLevel(frame:GetFrameLevel() + 4)
-				if previous then
-					frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -partyGap)
-				else
-					frame:SetPoint("TOPRIGHT", group, "TOPRIGHT", 0, 0)
-				end
-			else
-				PlaceOther(frame, previous, C.Position[name])
-			end
-			preview.frames[index] = frame
-		end
-		oUF:SetActiveStyle(active)
-		local label = F.CreateText(preview.frames[1], 12.8, "RIGHT")
-		label:SetPoint("BOTTOMRIGHT", preview.frames[1], "TOPRIGHT", 0, 6)
-		label:SetTextColor(unpack(C.HealthColor))
-		label:SetFormattedText(L.PreviewLabel, L[name])
-	end
-
-	if not previewEvents then
-		previewEvents = CreateFrame("Frame")
-		previewEvents:SetScript("OnEvent", function(self)
-			-- 換場景時關閉預覽；若已進入戰鬥，就等離開戰鬥後再解除安全框設定。
-			if InCombatLockdown() then self:RegisterEvent("PLAYER_REGEN_ENABLED"); return end
-			for _, activePreview in pairs(previews) do ClosePreview(activePreview) end
-			self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-			self:UnregisterEvent("PLAYER_REGEN_ENABLED")
-		end)
-	end
-	previewEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
-
-	-- 安全父框會在戰鬥、沒有目標或出現正式遭遇單位時隱藏所有副本。
-	-- 隊友預覽在組隊時也隱藏；每個副本仍由原生單位監看處理目標是否存在。
-	local visibility = "[combat][@target,noexists]"
-	if command == "party" then visibility = visibility.."[group]" end
-	for index = 1, MAX_BOSS_FRAMES do visibility = visibility.."[@boss"..index..",exists]" end
-	if not G.IsForever then
-		for index = 1, 5 do visibility = visibility.."[@arena"..index..",exists]" end
-	end
-	RegisterStateDriver(preview.group, "visibility", visibility.." hide; show")
-	for index, frame in ipairs(preview.frames) do
-		if command == "party" then
-			frame.PreviewSpecID = specID or previewSpecs[index]
-			UpdatePartyPreview(frame)
-			-- 只有第二格示範仇恨紅光，不為隊友預覽查詢目標的仇恨。
-			if index == 2 and F.GetHankkOption("ThreatHighlight") then
-				frame.Health.Glow:SetVertexColor(oUF.colors.threat[3]:GetRGB())
-			else frame.Health.Glow:SetVertexColor(0, 0, 0) end
-		end
-		frame:Enable()
-		frame:UpdateAllElements("Hankk"..name.."Preview")
-	end
-	print(string.format(L.PreviewOn, L[name]))
-end
-SLASH_OUFHANKKTEST1 = "/hanktest"
-SLASH_OUFHANKKTEST2 = "/hankktest"
