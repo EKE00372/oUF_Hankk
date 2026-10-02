@@ -81,8 +81,7 @@ local MediaFolder = G.MediaFolder
 			{key = "SmallFocus", default = true, tooltip = "SmallFocusDesc"},
 			{key = "ClassColorDigits", default = false, tooltip = "ClassColorDigitsTip"},
 			{key = "CurrentValuesOnly", default = false, tooltip = "CurrentValuesOnlyTip"},
-			{key = "DesaturateOtherDebuffs", default = not G.IsForever, tooltip = "DesaturateOtherDebuffsTip", foreverOnly = false},
-			{key = "ShowFirstNameOnly", default = false, foreverOnly = true},
+			{key = "HidePlayerHealth", default = false, tooltip = "HidePlayerHealthTip"},
 		}},
 		{name = "Frames", options = {
 			{key = "Arena", default = false, foreverOnly = false},
@@ -93,9 +92,12 @@ local MediaFolder = G.MediaFolder
 		{name = "Elements", options = {
 			{key = "PlayerResources", default = true},
 			{key = "PlayerTotems", default = true},
+			{key = "ThreatHighlight", default = true},
 			{key = "Fade", default = true, tooltip = "FadeTip"},
 			{key = "ShowTargetLevel", default = false, tooltip = "TargetLevelTip"},
-			{key = "ThreatHighlight", default = true},
+			{key = "ShowFirstNameOnly", default = false, foreverOnly = true},
+			{key = "DesaturateOtherDebuffs", default = not G.IsForever, tooltip = "DesaturateOtherDebuffsTip", foreverOnly = false},
+
 		}},
 	}
 

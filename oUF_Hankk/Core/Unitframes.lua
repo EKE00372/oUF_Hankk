@@ -399,7 +399,8 @@ local function CreatePlayerStyle(self)
 	self.mystyle = "player"
 
 	CreateMainShared(self)
-	self:Tag(self.Value, "[hankk:health] || [powercolor][hankk:power]|r")
+	-- 隱藏具體血量時，也移除分隔線；大百分比與水位不受影響。
+	self:Tag(self.Value, ((F.GetHankkOption("HidePlayerHealth") and "") or "[hankk:health] || ").."[powercolor][hankk:power]|r")
 	self.fade = F.GetHankkOption("Fade")
 
 	if F.GetHankkOption("ThreatHighlight") then T.CreatePlayerThreatIndicator(self) end
