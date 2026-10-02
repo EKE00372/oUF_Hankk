@@ -399,7 +399,7 @@ local function CreatePlayerStyle(self)
 	self.mystyle = "player"
 
 	CreateMainShared(self)
-	self:Tag(self.Value, "[powercolor][hankk:power]|r || [hankk:health]")
+	self:Tag(self.Value, "[hankk:health] || [powercolor][hankk:power]|r")
 	self.fade = F.GetHankkOption("Fade")
 
 	if F.GetHankkOption("ThreatHighlight") then T.CreatePlayerThreatIndicator(self) end

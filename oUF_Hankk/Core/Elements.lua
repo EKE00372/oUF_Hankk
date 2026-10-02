@@ -401,10 +401,12 @@ end
 -- addpower 法力 和 altpower 替代能量共用文字格式。
 local function UpdateSecondaryPowerText(element, current, maximum)
 	if not element.isActive then return end
+	-- addpower 靠右對齊，前面的空格讓左側狀態圖示與數值隔開。
+	local prefix = (element == element.__owner.AdditionalPower and " ") or ""
 	if F.GetHankkOption("CurrentValuesOnly") then
-		element.Value:SetText(F.NumberAbbrValue(current))
+		element.Value:SetFormattedText(prefix.."%s", F.NumberAbbrValue(current))
 	else
-		element.Value:SetFormattedText("%s/%s", F.NumberAbbrValue(current), F.NumberAbbrValue(maximum))
+		element.Value:SetFormattedText(prefix.."%s/%s", F.NumberAbbrValue(current), F.NumberAbbrValue(maximum))
 	end
 end
 
