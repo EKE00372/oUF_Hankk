@@ -1,0 +1,30 @@
+## Interface: 120100, 120105, 120107, 16001
+## Title: oUF_Hankk
+## Version: R1.0
+## Author: EK
+## Notes: Hank-inspired unit frames built.
+## OptionalDeps: Clique
+## SavedVariables: HankkDB
+## X-oUF: oUF_Hankk
+## X-Credits: Hank, Gwyd, toxi, oUF team, oUF_Ruri contributors
+
+Init.lua
+Config.lua
+FilterList.lua
+Locales.lua
+
+Libs\oUF\oUF.xml
+Libs\oUF_Fader.lua
+Libs\oUF_Essence.lua
+
+API.lua
+GUI.lua
+Tags.lua
+Embeds\Totems.lua
+Embeds\RaidManager.lua
+Embeds\EditMode.lua
+Core\Elements.lua
+Core\Castbar.lua
+Core\Auras.lua
+Core\Unitframes.lua
+Core\Otherframes.lua
