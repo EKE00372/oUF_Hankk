@@ -1,0 +1,18 @@
+# Local project instructions, reviews, and development memory.
+/AGENTS.md
+/CODE_REVIEW.md
+/.agents/
+# Keep all local project documentation out of Git.
+# 所有本機專案說明文件都不納入 Git。
+/Docs/
+
+# Keep all local tests and their documentation out of Git.
+# 所有本機測試及其說明文件都不納入 Git。
+/Tests/
+
+# Artwork stays local except explicitly selected remote previews.
+# Artwork 預設只留本機，只有明確選入 Remote 的預覽可追蹤。
+/Artwork/*
+!/Artwork/Previews/
+/Artwork/Previews/*
+!/Artwork/Previews/Remote/
