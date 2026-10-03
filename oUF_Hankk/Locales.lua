@@ -13,7 +13,7 @@ if locale == "zhTW" then
 	L.ClassColorDigits = "百分比職業染色"
 	L.ClassColorDigitsTip = "血量百分比使用職業顏色，而非預設橙色。"
 	L.CurrentValuesOnly = "簡化數值"
-	L.CurrentValuesOnlyTip = "玩家、目標和專注目標只顯示數值的當前值，不顯示最大值。\n\n目標鏈（ToT／ToTT／FoT／FoTT）、隊伍、首領和競技場隱藏百分號。"
+	L.CurrentValuesOnlyTip = "玩家、目標和專注目標只顯示數值的當前值，不顯示最大值。\n\n目標鏈（ToT/ToTT/FoT/FoTT）、隊伍、首領和競技場隱藏百分號。"
 	L.HidePlayerHealth = "隱藏玩家血量"
 	L.HidePlayerHealthTip = "隱藏玩家血量，只顯示能量值。"
 
@@ -40,6 +40,11 @@ if locale == "zhTW" then
 	L.Unchanged = "修改後需重載套用。"
 	L.Combat = "請在戰鬥結束後重載。"
 
+	L.EditModePlayer = "玩家框架"
+	L.EditModeTarget = "目標框架"
+	L.EditModeFocus = "專注目標框架"
+	L.EditModeMoveHint = "%s左鍵拖動位置\n%s右鍵重置位置"
+
 elseif locale == "zhCN" then
 	L.Style = "样式"
 	L.Frames = "框架"
@@ -50,7 +55,7 @@ elseif locale == "zhCN" then
 	L.ClassColorDigits = "百分比职业染色"
 	L.ClassColorDigitsTip = "血量百分比使用职业颜色，而非默认橙色。"
 	L.CurrentValuesOnly = "简化数值"
-	L.CurrentValuesOnlyTip = "玩家、目标和焦点目标只显示数值的当前值，不显示最大值。\n\n目标链（ToT／ToTT／FoT／FoTT）、队伍、首领和竞技场隐藏百分号。"
+	L.CurrentValuesOnlyTip = "玩家、目标和焦点目标只显示数值的当前值，不显示最大值。\n\n目标链（ToT/ToTT/FoT/FoTT）、队伍、首领和竞技场隐藏百分号。"
 	L.HidePlayerHealth = "隐藏玩家血量"
 	L.HidePlayerHealthTip = "隐藏玩家血量，只显示能量值。"
 
@@ -76,6 +81,11 @@ elseif locale == "zhCN" then
 	L.Saved = "已保存，重载后应用。"
 	L.Unchanged = "修改后需重载应用。"
 	L.Combat = "请在战斗结束后重载。"
+
+	L.EditModePlayer = "玩家框架"
+	L.EditModeTarget = "目标框架"
+	L.EditModeFocus = "焦点目标框架"
+	L.EditModeMoveHint = "%s左键拖动位置\n%s右键恢复默认"
 else
 	L.Style = "Style"
 	L.Frames = "Frames"
@@ -112,4 +122,9 @@ else
 	L.Saved = "Saved. Reload to apply."
 	L.Unchanged = "Reload to apply changes."
 	L.Combat = "Reload after combat."
+
+	L.EditModePlayer = "Player frame"
+	L.EditModeTarget = "Target frame"
+	L.EditModeFocus = "Focus frame"
+	L.EditModeMoveHint = "%sLeft-click to move\n%sRight-click to reset position"
 end

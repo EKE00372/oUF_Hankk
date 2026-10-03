@@ -90,18 +90,18 @@ local MediaFolder = G.MediaFolder
 	-- Frame point, reference frame, reference point, X, Y. Positive X moves right; positive Y moves up.
 	-- 依序是框體對齊點、參考框體、參考點、左右距離、上下距離。正數往右或往上。
 	C.Position = {
-		Player = {"RIGHT", UIParent, "CENTER", -220, -180},
+		-- Player = {"RIGHT", UIParent, "CENTER", -220, -180},
 		Pet = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -12, -4},
 		
-		Target = {"LEFT", UIParent, "CENTER", 220, -180},
+		-- Target = {"LEFT", UIParent, "CENTER", 220, -180},
 		TOT = {"BOTTOMLEFT", "oUF_HankkTarget", "TOPLEFT", 24, -4},
 		TOTT = {"BOTTOMLEFT", "oUF_HankkToT", "TOPLEFT", 0, 0},
 
-		Focus = {"CENTER", UIParent, "CENTER", 0, -270},
+		-- Focus = {"CENTER", UIParent, "CENTER", 0, -270},
 		FOT = {"BOTTOMLEFT", "oUF_HankkFocus", "TOPLEFT", 24, -4},
 		FOTT = {"BOTTOMLEFT", "oUF_HankkFoT", "TOPLEFT", 0, 0},
 		
-		Boss = {"RIGHT", UIParent, "RIGHT", -140, 185},
-		Arena = {"RIGHT", UIParent, "RIGHT", -140, 185},
-		Party = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -64, 60},
+		-- Boss = {"RIGHT", UIParent, "RIGHT", -140, 185},
+		-- Arena = {"RIGHT", UIParent, "RIGHT", -140, 185},
+		-- Party = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -64, 60},
 	}

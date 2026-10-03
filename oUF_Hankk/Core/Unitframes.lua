@@ -520,11 +520,15 @@ oUF:Factory(function(self)
 
 	self:SetActiveStyle("HankkPlayer")
 	local player = self:Spawn("player", "oUF_HankkPlayer")
-	player:SetPoint(unpack(C.Position.Player))
+	local playerAnchor = T.CreatePositionAnchor("Player", width, size,
+		{point = "CENTER", x = -220 - width / 2, y = -180})
+	player:SetPoint("CENTER", playerAnchor, "CENTER", 0, 0)
 
 	self:SetActiveStyle("HankkTarget")
 	local target = self:Spawn("target", "oUF_HankkTarget")
-	target:SetPoint(unpack(C.Position.Target))
+	local targetAnchor = T.CreatePositionAnchor("Target", width, size,
+		{point = "CENTER", x = 220 + width / 2, y = -180})
+	target:SetPoint("CENTER", targetAnchor, "CENTER", 0, 0)
 
 	self:SetActiveStyle("HankkPet")
 	local pet = self:Spawn("pet", "oUF_HankkPet")
@@ -545,7 +549,7 @@ oUF:Factory(function(self)
 	self:SetActiveStyle("HankkFocus")
 	local focus = self:Spawn("focus", "oUF_HankkFocus")
 	focus:SetScale(focusScale)
-	local point, relative, relativePoint, focusX, focusY = unpack(C.Position.Focus)
+	local focusY = -270
 	-- 預設座標以小型布局為基準，錨點為框架中心，完整尺寸會四面等比增大，因此把焦點往下移相同距離，讓焦點高度處於原位。
 	if focusScale == 1 then
 		local focusTopIncrease = size * (1 - smallFocusScale) / 2
@@ -553,8 +557,10 @@ oUF:Factory(function(self)
 		local chainTopIncrease = chainAreaHeight * (1 - smallFocusChainScale)
 		focusY = focusY - focusTopIncrease - chainTopIncrease
 	end
-	-- SetScale 也會縮放錨點偏移量；除以倍率後，畫面位置才符合設定座標。
-	focus:SetPoint(point, relative, relativePoint, focusX / focusScale, focusY / focusScale)
+	-- 定位框不縮放，使用畫面座標；焦點自身保留較小尺寸與原有內部布局。
+	local focusAnchor = T.CreatePositionAnchor("Focus", width * focusScale, size * focusScale,
+		{point = "CENTER", x = 0, y = focusY})
+	focus:SetPoint("CENTER", focusAnchor, "CENTER", 0, 0)
 
 	self:SetActiveStyle("HankkFoT")
 	local focustarget = self:Spawn("focustarget", "oUF_HankkFoT")

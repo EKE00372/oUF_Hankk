@@ -642,29 +642,39 @@ oUF:Factory(function(self)
 	self:RegisterStyle("HankkBoss", CreateBossStyle)
 	self:RegisterStyle("HankkArena", CreateArenaStyle)
 	local active = self:GetActiveStyle()
+	
 	if F.GetHankkOption("Boss") then
+		local groupHeight = MAX_BOSS_FRAMES * C.BossSize + (MAX_BOSS_FRAMES - 1) * 10
+		local anchor = T.CreatePositionAnchor("Boss", C.InfoWidth + C.BossSize, groupHeight,
+			{point = "RIGHT", x = -140, y = 185 - (groupHeight - C.BossSize) / 2})
 		local previous
 		self:SetActiveStyle("HankkBoss")
+		
 		-- 數量跟隨遊戲上限；建立後由 oUF 接管原生首領框的停用。
 		for index = 1, MAX_BOSS_FRAMES do
 			local frame = self:Spawn("boss"..index, "oUF_HankkBoss"..index)
 			if previous then
 				frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -10)
 			else
-				frame:SetPoint(unpack(C.Position.Boss))
+				frame:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
 			end
 			previous = frame
 		end
 	end
+	
 	if not G.IsForever and F.GetHankkOption("Arena") then
+		local groupHeight = 5 * C.BossSize + 4 * 10
+		local anchor = T.CreatePositionAnchor("Arena", C.InfoWidth + C.BossSize, groupHeight,
+			{point = "RIGHT", x = -140, y = 185 - (groupHeight - C.BossSize) / 2})
 		local previous
 		self:SetActiveStyle("HankkArena")
+		
 		for index = 1, 5 do
 			local frame = self:Spawn("arena"..index, "oUF_HankkArena"..index)
 			if previous then
 				frame:SetPoint("TOPRIGHT", previous, "BOTTOMRIGHT", 0, -10)
 			else
-				frame:SetPoint(unpack(C.Position.Arena))
+				frame:SetPoint("TOPRIGHT", anchor, "TOPRIGHT", 0, 0)
 			end
 			previous = frame
 		end
@@ -674,11 +684,16 @@ end)
 
 oUF:Factory(function(self)
 	self:RegisterStyle("HankkParty", CreatePartyStyle)
+
 	if F.GetHankkOption("Party") then
 		local group = CreateFrame("Frame", "oUF_HankkParty", UIParent, "SecureHandlerStateTemplate")
-		group:SetSize(C.InfoWidth + C.PartySize,
-			partyCount * C.PartySize + (partyCount - 1) * partyGap)
-		group:SetPoint(unpack(C.Position.Party))
+		local groupWidth = C.InfoWidth + C.PartySize
+		local groupHeight = partyCount * C.PartySize + (partyCount - 1) * partyGap
+
+		group:SetSize(groupWidth, groupHeight)
+		local anchor = T.CreatePositionAnchor("Party", groupWidth, groupHeight,
+			{point = "CENTER", x = -284 - groupWidth / 2, y = -180 + C.DigitSize / 2 + 60 + groupHeight / 2})
+		group:SetPoint("BOTTOMRIGHT", anchor, "BOTTOMRIGHT", 0, 0)
 		group:Hide()
 		-- 即使在戰鬥中，也由遊戲的隊伍狀態調整群組高度。
 		group:SetAttribute("member-height", C.PartySize)
@@ -688,6 +703,7 @@ oUF:Factory(function(self)
 				+ (newstate - 1) * self:GetAttribute("member-gap"))
 		]])
 		RegisterStateDriver(group, "count", "[@party4,exists] 4; [@party3,exists] 3; [@party2,exists] 2; 1")
+		
 		local previous, active = nil, self:GetActiveStyle()
 		self:SetActiveStyle("HankkParty")
 		for index = 1, partyCount do

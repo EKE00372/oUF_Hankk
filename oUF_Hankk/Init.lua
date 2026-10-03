@@ -72,6 +72,10 @@ local MediaFolder = G.MediaFolder
 	-- 固定圖示共用 4×4 數字圖集；第 11 格保留空白，用來省略前導數字。
 	G.HealthIconCells = {death = 12, ghost = 13, offline = 14, skull = 15, percent = 16}
 
+	-- Mouse buttons for inline hints / 提示文字用的滑鼠按鍵圖示
+	G.LeftButton = " |TInterface\\TUTORIALFRAME\\UI-TUTORIAL-FRAME:20:17:0:-1:512:512:12:66:230:307|t "
+	G.RightButton = " |TInterface\\TUTORIALFRAME\\UI-TUTORIAL-FRAME:20:17:0:-1:512:512:12:66:333:411|t "
+
 -------------------------------------
 -- GUI options / 圖形介面選項 --
 -------------------------------------
