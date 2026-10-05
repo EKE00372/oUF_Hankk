@@ -403,7 +403,7 @@ local function CreatePlayerStyle(self)
 	self:Tag(self.Value, "[powercolor][hankk:power]|r" .. ((F.GetHankkOption("HidePlayerHealth") and "") or " || [hankk:health]"))
 	self.fade = F.GetHankkOption("Fade")
 
-	if F.GetHankkOption("ThreatHighlight") then T.CreatePlayerThreatIndicator(self) end
+	if F.GetHankkOption("PlayerThreatHighlight") then T.CreatePlayerThreatIndicator(self) end
 	if F.GetHankkOption("PlayerResources") then T.CreateClassPower(self) end
 	T.CreatePlayerStatusIndicators(self)
 	if F.GetHankkOption("PlayerTotems") then T.CreateTotemBar(self) end

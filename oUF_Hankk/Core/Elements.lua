@@ -332,7 +332,7 @@ end
 -- 仇恨高亮顏色在 tags 裡。
 local function PostUpdatePlayerThreat(element, unit, status, color)
 	local r, g, b = 0, 0, 0
-	if unit == "player" and status and status > 0 then r, g, b = color:GetRGB() end
+	if unit == "player" and IsInGroup() and status and status > 0 then r, g, b = color:GetRGB() end
 	local health = element.Health
 	for _, digit in ipairs(health.Digits) do digit.Glow:SetVertexColor(r, g, b) end
 	health.Percent.Glow:SetVertexColor(r, g, b)
@@ -347,6 +347,20 @@ T.CreatePlayerThreatIndicator = function(self)
 	indicator:Hide()
 	self.ThreatIndicator = indicator
 end
+
+-- 入隊或離隊時即時刷新
+local function UpdatePlayerThreatGroup(self)
+	if self:IsElementEnabled("ThreatIndicator") then self.ThreatIndicator:ForceUpdate() end
+end
+local function EnablePlayerThreatGroup(self)
+	if self.mystyle ~= "player" or not self.ThreatIndicator then return end
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", UpdatePlayerThreatGroup, true)
+	return true
+end
+local function DisablePlayerThreatGroup(self)
+	self:UnregisterEvent("GROUP_ROSTER_UPDATE", UpdatePlayerThreatGroup)
+end
+oUF:AddElement("HankkPlayerThreatGroup", nil, EnablePlayerThreatGroup, DisablePlayerThreatGroup)
 
 --===================================================--
 -- Indicators / 狀態圖示

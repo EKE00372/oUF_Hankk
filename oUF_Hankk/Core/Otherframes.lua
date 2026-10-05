@@ -533,10 +533,10 @@ do
 	oUF:AddElement("HankkPartySpec", Update, Enable, Disable)
 end
 
--- 隊友只在承擔仇恨時高亮，不分職責；顏色由 oUF 回呼提供。
+-- 所有職責的隊友都顯示仇恨狀態 1～3；顏色由 oUF 回呼提供。
 local function PostUpdatePartyThreat(element, unit, status, color)
 	local glow = element.Glow
-	if status and status > 1 then
+	if status and status > 0 then
 		glow:SetVertexColor(color:GetRGB())
 	else
 		glow:SetVertexColor(0, 0, 0)
@@ -548,6 +548,7 @@ local function CreatePartyStyle(self, unit)
 	self.PartyUnit = unit
 	self.mystyle = "party"
 	CreateOtherStyle(self, C.PartySize)
+
 	-- 隊友標記顯示時才讓名字左移；隊友沒有施法條需要一起調整。
 	local raidIcon = self.RaidTargetIndicator
 	hooksecurefunc(raidIcon, "Show", function()
@@ -579,7 +580,7 @@ local function CreatePartyStyle(self, unit)
 	self:Tag(self.PowerValue, "[hankk:partypower]")
 
 	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。
-	if F.GetHankkOption("ThreatHighlight") then
+	if F.GetHankkOption("PartyThreatHighlight") then
 		local indicator = CreateFrame("Frame", nil, self)
 		indicator:EnableMouse(false)
 		indicator.Glow = self.Health.Glow
@@ -596,38 +597,18 @@ local function CreatePartyStyle(self, unit)
 	role:SetDesaturated(true)
 	role:SetTexCoord(0, 1, 0, 1)
 	role:Hide()
-	-- 有暴雪原生更新器就交它套用自訂材質；沒有時，oUF 先選內建圖集，
-	-- 再依它回報的公開職責換成我們的材質。
+	-- 替換材質，舊路徑則由回呼依官方提供的公開職責換回圖案。
 	role.tankAtlas = G.media.role_tank
 	role.healerAtlas = G.media.role_healer
 	role.damageAtlas = G.media.role_dps
-	if UnitFrameUtil and UnitFrameUtil.UpdateUnitFrameRoleIcon then
-		local state = {
-			roleIcon = role,
-			optionTable = {
-				displayRoleIcon = true,
-				textureMap = {
-					TANK = role.tankAtlas,
-					HEALER = role.healerAtlas,
-					DAMAGER = role.damageAtlas,
-					VEHICLE = "",
-				},
-			},
-		}
-		role.Override = function(frame)
-			state.unit = frame.__unit
-			UnitFrameUtil.UpdateUnitFrameRoleIcon(state)
-		end
-	else
-		role.PostUpdate = function(element, assignedRole)
-			local texture
-			if assignedRole == Enum.LFGRole.Tank then texture = element.tankAtlas
-			elseif assignedRole == Enum.LFGRole.Healer then texture = element.healerAtlas
-			elseif assignedRole == Enum.LFGRole.Damage then texture = element.damageAtlas end
-			if texture then
-				element:SetTexture(texture)
-				element:SetTexCoord(0, 1, 0, 1)
-			end
+	role.PostUpdate = function(element, assignedRole)
+		local texture
+		if assignedRole == Enum.LFGRole.Tank then texture = element.tankAtlas
+		elseif assignedRole == Enum.LFGRole.Healer then texture = element.healerAtlas
+		elseif assignedRole == Enum.LFGRole.Damage then texture = element.damageAtlas end
+		if texture then
+			element:SetTexture(texture)
+			element:SetTexCoord(0, 1, 0, 1)
 		end
 	end
 	self.GroupRoleIndicator = role

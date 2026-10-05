@@ -1,6 +1,6 @@
 ## Interface: 120100, 120105, 120107, 16001
 ## Title: oUF_Hankk
-## Version: R1.1
+## Version: R1.2
 ## Author: EK
 ## Notes: Hank-inspired unit frames built.
 ## OptionalDeps: Clique

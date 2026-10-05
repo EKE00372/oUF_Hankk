@@ -96,11 +96,12 @@ local MediaFolder = G.MediaFolder
 		{name = "Elements", options = {
 			{key = "PlayerResources", default = true},
 			{key = "PlayerTotems", default = true},
-			{key = "ThreatHighlight", default = true},
-			{key = "Fade", default = true, tooltip = "FadeTip"},
+			{key = "PartyThreatHighlight", default = true},
+			{key = "PlayerThreatHighlight", default = true, tooltip = "PlayerThreatHighlightTip"},
 			{key = "ShowTargetLevel", default = false, tooltip = "TargetLevelTip"},
 			{key = "ShowFirstNameOnly", default = false, foreverOnly = true},
 			{key = "DesaturateOtherDebuffs", default = not G.IsForever, tooltip = "DesaturateOtherDebuffsTip", foreverOnly = false},
+			{key = "Fade", default = true, tooltip = "FadeTip"},
 
 		}},
 	}
@@ -153,6 +154,13 @@ local MediaFolder = G.MediaFolder
 	dbLoader:SetScript("OnEvent", function(self, event, name)
 		if name ~= addon then return end
 		local db = GetOptionsDB()
+		-- Carry the shared switch over to both new options; explicit new values take priority.
+		-- 將共用開關帶到兩個新選項；已儲存的新選項優先。
+		if type(db.ThreatHighlight) == "boolean" then
+			for _, key in ipairs({"PartyThreatHighlight", "PlayerThreatHighlight"}) do
+				if type(db[key]) ~= "boolean" then db[key] = db.ThreatHighlight end
+			end
+		end
 		for key in pairs(db) do
 			if not optionMap[key] then db[key] = nil end
 		end
