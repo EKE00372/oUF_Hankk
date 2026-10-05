@@ -36,6 +36,7 @@ if locale == "zhTW" then
 
 	L.Reload = "套用設定"
 	L.Reset = "恢復預設"
+	L.PositionHint = "位置在編輯模式中調整。"
 	L.Saved = "已儲存，重載後套用。"
 	L.Unchanged = "修改後需重載套用。"
 	L.Combat = "請在戰鬥結束後重載。"
@@ -78,6 +79,7 @@ elseif locale == "zhCN" then
 
 	L.Reload = "应用设置"
 	L.Reset = "恢复默认"
+	L.PositionHint = "位置在编辑模式中调整。"
 	L.Saved = "已保存，重载后应用。"
 	L.Unchanged = "修改后需重载应用。"
 	L.Combat = "请在战斗结束后重载。"
@@ -119,6 +121,7 @@ else
 
 	L.Reload = "Apply settings"
 	L.Reset = "Restore defaults"
+	L.PositionHint = "Adjust positions in Edit Mode."
 	L.Saved = "Saved. Reload to apply."
 	L.Unchanged = "Reload to apply changes."
 	L.Combat = "Reload after combat."

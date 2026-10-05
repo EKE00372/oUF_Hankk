@@ -170,6 +170,10 @@ local function BuildGUI()
 	MainFrame.StatusText = CreateText(MainFrame, "", 12, "LEFT")
 	MainFrame.StatusText:SetTextColor(THEME_R, THEME_G, THEME_B)
 
+	local positionHint = CreateText(MainFrame, L.PositionHint, 12, "LEFT")
+	positionHint:SetPoint("BOTTOMLEFT", MainFrame.StatusText, "TOPLEFT", 0, 4)
+	positionHint:SetTextColor(THEME_R, THEME_G, THEME_B)
+
 	local close = CreateButton(MainFrame, 24, "X")
 	close:SetPoint("TOPRIGHT", -12, -12)
 	close:SetScript("OnClick", function() MainFrame:Hide() end)
