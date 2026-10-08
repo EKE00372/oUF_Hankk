@@ -14,6 +14,7 @@ local addon, ns = ...
 local F, G = ns[2], ns[3]
 
 	G.IsForever = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CLASSIC
+	G.CanShowPlayerPvP = select(4, GetBuildInfo()) ~= 120100
 	G.MediaFolder = "Interface\\AddOns\\"..addon.."\\Media\\"
 
 local MediaFolder = G.MediaFolder

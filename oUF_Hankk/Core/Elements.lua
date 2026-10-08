@@ -351,245 +351,132 @@ end
 -- Indicators / 狀態圖示
 --===================================================--
 
--- 狀態圖集有八個 128px 圖格。預設每格顯示為 32 UI 單位：圖示本體占 24，四周各留 4 給柔光。
-local function SetStatusTexture(element, column)
-	element:SetTexture(G.media.statusicons)
-	element:SetTexCoord(column / 8, (column + 1) / 8, 0, 1)
-end
+-- 額外法力
+T.CreateAddPower = function(self)
+	local class = UnitClassBase("player")
+	if class ~= "DRUID" and class ~= "PRIEST" and class ~= "SHAMAN" then return end
 
--- 這裡選擇陣營圖案；PvP 狀態同時控制透明度，以及後面圖示需要預留的間距。
-local function UpdatePvPIndicator(self, event, unit)
-	if unit and unit ~= self.__unit then return end
-	unit = unit or self.__unit
-	local element = self.PvPIndicator
-	local faction = UnitFactionGroup(unit)
-	local freeForAll = UnitIsPVPFreeForAll(unit)
-
-	if freeForAll then
-		faction = UnitFactionGroup("player")
-	elseif unit == "player" and UnitIsMercenary(unit) then
-		if faction == "Alliance" then faction = "Horde"
-		elseif faction == "Horde" then faction = "Alliance" end
-	elseif not UnitIsHumanPlayer(unit) then
-		-- 載具使用玩家陣營；敵方載具則使用相反陣營。
-		faction = UnitFactionGroup("player")
-		if UnitIsEnemy("player", unit) then
-			if faction == "Alliance" then faction = "Horde"
-			elseif faction == "Horde" then faction = "Alliance" end
-		end
-	end
-	local texture = (faction == "Alliance" and G.media.pvp_alliance) or (faction == "Horde" and G.media.pvp_horde)
-	if texture then
-		element:SetTexture(texture)
-		element:SetTexCoord(0, 1, 0, 1)
-	elseif freeForAll then
-		element:SetTexture("Interface\\TargetingFrame\\UI-PVP-FFA")
-		element:SetTexCoord(0, 0.65625, 0, 0.65625)
-	else
-		element:Hide()
-		return
-	end
-
-	-- 材質保持顯示，由 PvP 狀態同時收起透明度與占位寬度。
-	local active = UnitIsPVP(unit)
-	element:SetAlphaFromBoolean(active, 1, 0)
-	element.Spacing:SetValue(C_CurveUtil.EvaluateColorValueFromBoolean(active, 1, .5), Enum.StatusBarInterpolation.Immediate)
-	element:Show()
-end
-
--- addpower 法力 和 altpower 替代能量共用文字格式。
-local function UpdateSecondaryPowerText(element, current, maximum)
-	if not element.isActive then return end
-	-- addpower 靠右對齊，前面的空格讓左側狀態圖示與數值隔開。
-	local prefix = (element == element.__owner.AdditionalPower and " ") or ""
-	local text
-	if F.GetHankkOption("CurrentValuesOnly") then
-		text = string.format(prefix.."%s", F.NumberAbbrValue(current))
-	else
-		text = string.format(prefix.."%s/%s", F.NumberAbbrValue(current), F.NumberAbbrValue(maximum))
-	end
-	-- 額外法力以最大值控制整段文字留空；目前法力為零仍顯示 0／上限。
-	if element == element.__owner.AdditionalPower then text = F.FormatZero(maximum, text) end
-	element.Value:SetFormattedText("%s", text)
-end
-
-local function ColorSecondaryPowerText(element, color)
-	if color then
-		element.Value:SetTextColor(color:GetRGB())
-	else
-		element.Value:SetTextColor(unpack(C.TextColor))
-	end
-end
-
--- 保留真正的 oUF StatusBar 承接事件，只顯示它的文字。
-local function CreateSecondaryPowerText(self)
-	local bar = CreateFrame("StatusBar", nil, self.Health, "DisableUntrustedLayoutScriptsTemplate")
-	bar:SetSize(1, 1)
-	bar:SetPoint("BOTTOMRIGHT", self.Value, "TOPRIGHT", 0, 0)
-	bar:SetStatusBarTexture(G.media.blank)
-	bar:GetStatusBarTexture():SetAlpha(0)
-	bar:EnableMouse(false)
-	bar.colorPower = true
-	bar.Value = F.CreateText(bar, G.ValueFS, "RIGHT")
-	bar.Value:SetHeight(G.ValueFS + 4)
-	bar.Value:SetPoint("BOTTOMRIGHT", bar, "BOTTOMRIGHT", 0, 0)
-	bar:Hide()
-	bar.isActive = false
-	return bar
-end
-
--- 目標特殊能量放進數值行；顯示條件與事件仍由官方元素管理。
-T.CreateTargetAlternativePower = function(self)
+	-- 隱藏的狀態條
 	local power = CreateFrame("StatusBar", nil, self.Health, "DisableUntrustedLayoutScriptsTemplate")
 	power:SetSize(1, 1)
-	power:SetPoint("BOTTOMLEFT", self.Value, "BOTTOMLEFT", 0, 0)
 	power:SetStatusBarTexture(G.media.blank)
 	power:GetStatusBarTexture():SetAlpha(0)
 	power:EnableMouse(false)
 	power:Hide()
-	power.isActive = false
-	power.valueText = ""
-	power.PostUpdate = function(element, unit, current, minimum, maximum)
-		if not element.isActive then return end
-		local value = F.NumberAbbrValue(current)
-		if not F.GetHankkOption("CurrentValuesOnly") then
-			value = string.format("%s/%s", value, F.NumberAbbrValue(maximum))
-		end
-		local color = self.colors.power[Enum.PowerType.Alternate]
-		local markup = (color and color:GenerateHexColorMarkup()) or "|cffffffff"
-		-- 結果直接交給標籤顯示；在分隔線與血量文字前還原顏色。
-		element.valueText = string.format("%s%s|r || ", markup, value)
-		self.Value:UpdateTag()
+
+	-- 實際顯示的數值
+	local value = F.CreateText(power, G.ValueFS, "RIGHT")
+	value:SetSize(0, G.ValueFS + 4)
+	value:SetTextColor(self.colors.power.MANA:GetRGB())
+	value:SetText("")
+	power.Value = value
+
+	-- 熊德與貓德也顯示額外法力
+	if class == "DRUID" then
+		power.displayPairs = CopyTable(ALT_POWER_BAR_PAIR_DISPLAY_INFO)
+		power.displayPairs.DRUID[Enum.PowerType.Energy] = true
+		power.displayPairs.DRUID[Enum.PowerType.Rage] = true
 	end
-	hooksecurefunc(power, "Show", function() power.isActive = true end)
-	hooksecurefunc(power, "Hide", function()
-		if not power.isActive then return end
-		power.isActive = false
-		power.valueText = ""
-		self.Value:UpdateTag()
-	end)
+
+	-- 隱藏時縮排
+	power.PostUpdate = function(element, current, maximum)
+		if not element:IsShown() then
+			element.Value:SetText("")
+			return
+		end
+
+		local currentText = F.NumberAbbrValue(current)
+		local text
+		if F.GetHankkOption("CurrentValuesOnly") then
+			text = string.format(" || %s", currentText)
+		else
+			text = string.format(" || %s/%s", currentText, F.NumberAbbrValue(maximum))
+		end
+		text = F.FormatZero(maximum, text)
+		element.Value:SetFormattedText("%s", text)
+	end
+	hooksecurefunc(power, "Hide", power.PostUpdate)	-- 停用時 oUF 只隱藏元素；沿用同一個 callback 清空文字並收距。
+
+	self.AdditionalPower = power
+end
+
+-- 替代能量
+T.CreateAltPower = function(self)
+	local isPlayer = (self.mystyle == "player")
+	local color = self.colors.power[Enum.PowerType.Alternate]
+	local markup = (color and color:GenerateHexColorMarkup()) or "|cffffffff"
+	local valueFormat = (isPlayer and " || " .. markup .. "%s|r") or (markup .. "%s|r || ")
+
+	-- 隱藏的狀態條
+	local power = CreateFrame("StatusBar", nil, self.Health, "DisableUntrustedLayoutScriptsTemplate")
+	power:SetSize(1, 1)
+	power:SetStatusBarTexture(G.media.blank)
+	power:GetStatusBarTexture():SetAlpha(0)
+	power:EnableMouse(false)
+	power:Hide()
+
+	-- 實際顯示的數值
+	local value = F.CreateText(power, G.ValueFS, (isPlayer and "RIGHT") or "LEFT")
+	value:SetSize(0, G.ValueFS + 4)
+	value:SetTextColor(unpack(C.TextColor))
+	value:SetText("")
+	power.Value = value
+
+	-- 隱藏時縮排
+	power.PostUpdate = function(element, unit, current, minimum, maximum)
+		if not unit or not element:IsShown() then
+			element.Value:SetText("")
+			return
+		end
+
+		local text = F.NumberAbbrValue(current)
+		if not F.GetHankkOption("CurrentValuesOnly") then
+			text = string.format("%s/%s", text, F.NumberAbbrValue(maximum))
+		end
+
+		element.Value:SetFormattedText(valueFormat, text)
+	end
+	hooksecurefunc(power, "Hide", power.PostUpdate)	-- 停用時 oUF 只隱藏元素；沿用同一個 callback 清空文字並收距。
+
 	self.AlternativePower = power
 end
 
--- 從右往左：額外法力、特殊能量、狀態圖示，最後是團隊標記。
-T.CreatePlayerStatusIndicators = function(self)
-	local powers, icons = {}, {}
-	local class = UnitClassBase("player")
-	if class == "DRUID" or class == "PRIEST" or class == "SHAMAN" then
-		local power = CreateSecondaryPowerText(self)
-		power.PostUpdate = UpdateSecondaryPowerText
-		power.PostUpdateColor = ColorSecondaryPowerText
-		if class == "DRUID" then
-			-- 只擴充德魯伊的副本；貓的能量與熊的怒氣也同時顯示法力。
-			power.displayPairs = CopyTable(ALT_POWER_BAR_PAIR_DISPLAY_INFO)
-			power.displayPairs.DRUID[Enum.PowerType.Energy] = true
-			power.displayPairs.DRUID[Enum.PowerType.Rage] = true
-		end
-		self.AdditionalPower = power
-		powers[#powers + 1] = power
-	end
-	local alternative = CreateSecondaryPowerText(self)
-	-- 這兩個官方 callback 有 unit 參數；AdditionalPower 的 callback 則沒有。
-	alternative.PostUpdate = function(element, unit, current, minimum, maximum)
-		UpdateSecondaryPowerText(element, current, maximum)
-	end
-	alternative.PostUpdateColor = function(element, unit, color)
-		ColorSecondaryPowerText(element, color)
-	end
-	self.AlternativePower = alternative
-	powers[#powers + 1] = alternative
-	-- 柔光留白隨圖示尺寸等比縮放；定位時扣回這段留白，讓圖示本體對齊。
-	local inset = C.StatusSize * 4 / 24
-	local pvpAdvance = C.StatusSize + 3
-	for _, entry in ipairs({
-		{"LeaderIndicator", 2, C.PlayerStatusColors.Role}, {"AssistantIndicator", 5, C.PlayerStatusColors.Role},
-		{"PvPIndicator"},
-		{"RestingIndicator", 1, C.PlayerStatusColors.Resting}, {"CombatIndicator", 0, C.PlayerStatusColors.Combat},
-	}) do
-		local icon = self.Health:CreateTexture(nil, "OVERLAY")
-		icon:SetSize(C.StatusSize + inset * 2, C.StatusSize + inset * 2)
-		icon:SetPoint("BOTTOMRIGHT", self.Value, "TOPRIGHT", inset, -inset)
-		if entry[2] then
-			SetStatusTexture(icon, entry[2])
-			icon:SetVertexColor(unpack(entry[3]))
-		else
-			-- 半滿時不占位；全滿時，後面的圖示向左移 pvpAdvance 的距離。
-			-- 填滿區域始終保留寬度，兩種狀態都能作為定位依據。
-			local spacing = CreateFrame("StatusBar", nil, self.Health, "DisableUntrustedLayoutScriptsTemplate")
-			spacing:SetSize(pvpAdvance * 2, 1)
-			spacing:SetOrientation("HORIZONTAL")
-			spacing:SetReverseFill(true)
-			spacing:SetStatusBarTexture(G.media.blank)
-			spacing:SetStatusBarColor(1, 1, 1, 0)
-			spacing:SetMinMaxValues(0, 1)
-			spacing:SetValue(.5, Enum.StatusBarInterpolation.Immediate)
-			spacing:EnableMouse(false)
-			icon.Spacing = spacing
-			icon.Override = UpdatePvPIndicator
-			icon:SetTexCoord(0, 1, 0, 1)
-			icon:SetVertexColor(1, 1, 1)
-			icon:SetBlendMode("BLEND")
-		end
-		icon:Hide()
-		icon.isActive = false
-		icons[#icons + 1] = icon
-		self[entry[1]] = icon
-	end
-	-- 團隊標記接在所有狀態圖示後面，顯示時固定是這一列的最左側。
-	local marker = self.RaidTargetIndicator
-	marker.isActive = false
-	icons[#icons + 1] = marker
+-- PvP 位於玩家上行最左端；狀態交給 oUF，只指定材質與固定位置。
+T.CreatePlayerPvPIndicator = function(self)
+	if not G.CanShowPlayerPvP then return end
 
-	local function UpdateSpacing(icon, shown)
-		if icon then
-			if icon.isActive == shown then return end
-			icon.isActive = shown
-		end
-		-- 從數值行右端開始，每個顯示中的項目接在前一個項目左側。
-		-- 文字使用自然寬度；未顯示的項目不留空位。
-		local anchor, point, gap = self.Value, "TOPRIGHT", 0
-		for _, power in ipairs(powers) do
-			if power.isActive then
-				power:SetPoint("BOTTOMRIGHT", anchor, point, -gap, 0)
-				anchor, point, gap = power.Value, "BOTTOMLEFT", textGap
-			end
-		end
-		local offset = gap
-		for _, indicator in ipairs(icons) do
-			if indicator == self.PvPIndicator then
-				indicator:SetPoint("BOTTOMRIGHT", anchor, point, inset - offset, -inset)
-				indicator.Spacing:SetPoint("TOPRIGHT", anchor, point, pvpAdvance - offset, 0)
-				anchor, point, offset = indicator.Spacing:GetStatusBarTexture(), "TOPLEFT", 0
-			elseif indicator == self.RaidTargetIndicator then
-				if indicator.isActive then
-					indicator:SetPoint("BOTTOMRIGHT", anchor, point, -offset, 0)
-				end
-			elseif indicator.isActive then
-				indicator:SetPoint("BOTTOMRIGHT", anchor, point, inset - offset, -inset)
-				offset = offset + C.StatusSize
-			end
-		end
-	end
+	local inset = C.StatusSize/6	-- 尺寸本體24，上下柔光各4，固定比例
+	local iconSize = C.StatusSize + inset * 2
+	local faction = UnitFactionGroup("player")
+	local textures = {
+		Alliance = G.media.pvp_alliance,
+		Horde = G.media.pvp_horde,
+		FFA = (faction == "Alliance" and G.media.pvp_alliance)
+			or (faction == "Horde" and G.media.pvp_horde)
+			or "Interface\\TargetingFrame\\UI-PVP-FFA",
+	}
 
-	-- 所有物件建立後，再統一掛上顯隱 callback。
-	for _, power in ipairs(powers) do
-		hooksecurefunc(power, "Show", function() UpdateSpacing(power, true) end)
-		hooksecurefunc(power, "Hide", function() UpdateSpacing(power, false) end)
+	local icon = self.Health:CreateTexture(nil, "OVERLAY")
+	icon:SetSize(iconSize, iconSize)
+	icon:SetPoint("BOTTOMRIGHT", self.StatusValue, "BOTTOMLEFT", inset, -inset)
+	icon:SetTexCoord(0, 1, 0, 1)
+	icon:SetVertexColor(1, 1, 1)
+	icon:SetBlendMode("BLEND")
+	icon:Show()
+	-- FOREVER 由原生 textureMap 選圖；FFA 保留玩家陣營的骷髏外觀。
+	icon.allianceAtlas = textures.Alliance
+	icon.hordeAtlas = textures.Horde
+	icon.ffaAtlas = textures.FFA
+
+	icon.PostUpdate = function(element, unit, status)
+		-- 正式服核心會覆寫 Atlas，依它提供的狀態換回材質。
+		-- FOREVER 已透過 textureMap 套好材質，不提供 status。
+		if status and textures[status] then element:SetTexture(textures[status]) end
+		element:SetTexCoord(0, 1, 0, 1)
+		element:SetSize(iconSize, iconSize)
 	end
-	for _, icon in ipairs(icons) do
-		hooksecurefunc(icon, "Show", function() UpdateSpacing(icon, true) end)
-		hooksecurefunc(icon, "Hide", function() UpdateSpacing(icon, false) end)
-	end
-	-- PvP 圖示被停用時，也要收回預留的間距。
-	hooksecurefunc(self.PvPIndicator, "Hide", function()
-		self.PvPIndicator.Spacing:SetValue(.5, Enum.StatusBarInterpolation.Immediate)
-	end)
-	-- oUF 每次更新都會選用隊長／嚮導圖集；接著換回我們的皇冠與職責顏色。
-	self.LeaderIndicator.PostUpdate = function(icon)
-		SetStatusTexture(icon, 2)
-		icon:SetVertexColor(unpack(C.PlayerStatusColors.Role))
-	end
-	UpdateSpacing()
+	
+	self.PvPIndicator = icon
 end
 
 -- 目標狀態圖示：放在子框上，畫在名字前面，不讓文字蓋住圖示。
@@ -598,15 +485,18 @@ T.CreateTargetStatusIndicators = function(self)
 	local overlay = CreateFrame("Frame", nil, self.Info, "DisableUntrustedLayoutScriptsTemplate")
 	overlay:SetSize(size, size)
 	overlay:SetPoint("CENTER", self.Name, "CENTER", 0, 0)
+
 	-- 置中排列
 	local icons = {}
 	local function UpdateSpacing(icon, shown)
 		if icon.isActive == shown then return end
 		icon.isActive = shown
+
 		local count = 0
 		for _, indicator in ipairs(icons) do
 			if indicator.isActive then count = count + 1 end
 		end
+
 		local step = size - 4
 		local offset = -(count - 1) * step / 2
 		for _, indicator in ipairs(icons) do
@@ -616,6 +506,7 @@ T.CreateTargetStatusIndicators = function(self)
 			end
 		end
 	end
+
 	-- 位面、召喚、戰復
 	for _, name in ipairs({"PhaseIndicator", "SummonIndicator", "ResurrectIndicator"}) do
 		local icon = overlay:CreateTexture(nil, "OVERLAY")
@@ -626,6 +517,7 @@ T.CreateTargetStatusIndicators = function(self)
 		icon.isActive = false
 		icons[#icons + 1] = icon
 		self[name] = icon
+
 		-- oUF 顯示、隱藏或停用圖示時，重新計算整組的置中位置。
 		hooksecurefunc(icon, "Show", function() UpdateSpacing(icon, true) end)
 		hooksecurefunc(icon, "Hide", function() UpdateSpacing(icon, false) end)

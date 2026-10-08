@@ -281,7 +281,7 @@ local function CreateOtherStyle(self, size)
 	if self.mystyle == "party" then
 		raidIcon:SetPoint("RIGHT", info, "RIGHT", 0, 0)
 	else
-		raidIcon:SetPoint("TOPRIGHT", iconAnchor, size - C.RaidIconSize*0.75, size - C.RaidIconSize*0.75)
+		raidIcon:SetPoint("TOPRIGHT", iconAnchor, size - C.RaidIconSize * .75, size - C.RaidIconSize * .75)
 	end
 	raidIcon:Hide()
 	self.RaidTargetIndicator = raidIcon
@@ -296,7 +296,7 @@ local function CreateBossStyle(self)
 
 	-- Tags
 	self:Tag(self.Value, (F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%")
-	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
+	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower<$|r ||]")
 
 	-- Elements
 	T.CreateBossAuras(self)
@@ -311,6 +311,7 @@ end
 local function PostUpdateArenaColor(health, _, color)
 	local r, g, b = unpack(C.HealthColor)
 	if color then r, g, b = color:GetRGB() end
+
 	health.Fill:SetVertexColor(r, g, b)
 	health:SetStatusBarColor(1, 1, 1, 0)
 end
@@ -343,7 +344,7 @@ local function CreateArenaStyle(self, unit)
 
 	-- Tags
 	self:Tag(self.Value, (F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%")
-	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
+	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower<$|r ||]")
 
 	-- Elements
 	T.CreateArenaAuras(self)

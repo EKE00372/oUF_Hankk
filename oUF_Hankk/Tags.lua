@@ -1,16 +1,20 @@
 local _, ns = ...
 local oUF = ns.oUF
-local F, G = ns[2], ns[3]
+local C, F, G = ns[1], ns[2], ns[3]
 
 local UnitIsTapDenied, UnitIsPlayer, UnitReaction = UnitIsTapDenied, UnitIsPlayer, UnitReaction
 local UnitInPartyIsAI = UnitInPartyIsAI
 local UnitHealth, UnitHealthMax, UnitPower, UnitPowerMax = UnitHealth, UnitHealthMax, UnitPower, UnitPowerMax
 local UnitPowerPercent = UnitPowerPercent
 local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
+local UnitIsGroupLeader, UnitIsGroupAssistant = UnitIsGroupLeader, UnitIsGroupAssistant
+local UnitAffectingCombat, IsResting = UnitAffectingCombat, IsResting
 local UnitClassification, UnitEffectiveLevel = UnitClassification, UnitEffectiveLevel
 local GetContentDifficultyCreatureForPlayer = C_PlayerInfo.GetContentDifficultyCreatureForPlayer
 local GetDifficultyColor = GetDifficultyColor
 local format = string.format
+
+local BoolValue = C_CurveUtil.EvaluateColorValueFromBoolean
 local FormatZero = F.FormatZero
 
 --===================================================--
@@ -45,18 +49,13 @@ oUF.colors.power.FUEL = oUF:CreateColor(0, .75, .7)		-- 燃料
 oUF.colors.power.AMMOSLOT = oUF:CreateColor(.8, .6, 0)	-- 彈藥
 oUF.colors.power.TIP_OF_THE_SPEAR = oUF:CreateColor(166/255, 242/255, 84/255) -- 長矛之尖
 oUF.colors.power.SOUL_FRAGMENTS = {						-- DH 靈魂碎片
-	oUF:CreateColor(.87, .47, 1), -- 一般狀態
-	oUF:CreateColor(.5, .62, 1), -- 虛空變身
+	oUF:CreateColor(.87, .47, 1),	-- 一般狀態
+	oUF:CreateColor(.5, .62, 1),	-- 虛空變身
 }
 
 --===================================================--
 -- Values / 數值
 --===================================================--
-
-oUF.Tags.Methods["hankk:altpower"] = function()
-	local power = _FRAME.AlternativePower
-	if power then return power.valueText end
-end
 
 -- 血量：當前值/最大值
 oUF.Tags.Methods["hankk:health"] = function(unit)
@@ -70,6 +69,7 @@ oUF.Tags.Events["hankk:health"] = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION"
 -- 吸收盾：縮寫數值
 oUF.Tags.Methods["hankk:absorbs"] = function(unit)
 	local amount = UnitGetTotalAbsorbs(unit)
+
 	return FormatZero(amount, F.NumberAbbrValue(amount))
 end
 oUF.Tags.Events["hankk:absorbs"] = "UNIT_ABSORB_AMOUNT_CHANGED"
@@ -77,8 +77,8 @@ oUF.Tags.Events["hankk:absorbs"] = "UNIT_ABSORB_AMOUNT_CHANGED"
 -- 能量：當前值/最大值
 oUF.Tags.Methods["hankk:power"] = function(unit)
 	local current = F.NumberAbbrValue(UnitPower(unit))
-	
 	if F.GetHankkOption("CurrentValuesOnly") then return current end
+
 	return format("%s/%s", current, F.NumberAbbrValue(UnitPowerMax(unit)))
 end
 oUF.Tags.Events["hankk:power"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
@@ -86,8 +86,8 @@ oUF.Tags.Events["hankk:power"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAY
 -- 首領與競技場能量：當前值
 oUF.Tags.Methods["hankk:otherpower"] = function(unit)
 	local amount = UnitPower(unit)
-	local text = C_StringUtil.WrapString(F.NumberAbbrValue(amount), nil, "|r ||")
-	return FormatZero(amount, text)
+
+	return FormatZero(amount, F.NumberAbbrValue(amount))
 end
 oUF.Tags.Events["hankk:otherpower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
@@ -102,6 +102,36 @@ oUF.Tags.Methods["hankk:partypower"] = function(unit)
 	return FormatZero(mana, oUF.colors.power.MANA:WrapTextInColorCode(text))
 end
 oUF.Tags.Events["hankk:partypower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
+
+
+--===================================================--
+-- Status icon / 狀態圖示
+--===================================================--
+
+do
+	local size = C.StatusSize	-- 整格顯示尺寸，包含透明留邊與柔光。
+	local markup = "|T" .. G.media.statusicons .. ":%d:%d:0:0:1024:128:"
+	G.Icons = {
+		Resting = format(markup .. "128:256:0:128:119:191:255|t", size, size),
+		Combat = format(markup .. "0:128:0:128:255:99:76|t", size, size),
+		Assistant = format(markup .. "640:768:0:128:255:209:91|t", size, size),
+		Leader = format(markup .. "256:384:0:128:255:209:91|t", size, size),
+	}
+end
+
+-- 四種狀態圖示使用完整圖格，依文字自然寬度收距。
+oUF.Tags.Methods["hankk:playericons"] = function(unit)
+	-- Boolean交EO31原生轉成 0/1，再以零值格式化控制圖示顯示。
+	local resting = FormatZero(BoolValue(IsResting(), 1, 0), G.Icons.Resting)
+	local combat = FormatZero(BoolValue(UnitAffectingCombat(unit), 1, 0), G.Icons.Combat)
+	local assistant = FormatZero(BoolValue(UnitIsGroupAssistant(unit), 1, 0), G.Icons.Assistant)
+	local leader = FormatZero(BoolValue(UnitIsGroupLeader(unit), 1, 0), G.Icons.Leader)
+
+	return format("%s%s%s%s", resting, combat, assistant, leader)
+end
+oUF.Tags.Events["hankk:playericons"] = "UNIT_FLAGS PARTY_LEADER_CHANGED GROUP_ROSTER_UPDATE PLAYER_UPDATE_RESTING PLAYER_REGEN_ENABLED PLAYER_REGEN_DISABLED"
+oUF.Tags.SharedEvents.PLAYER_REGEN_ENABLED = true
+oUF.Tags.SharedEvents.PLAYER_REGEN_DISABLED = true
 
 --===================================================--
 -- Target level / 目標等級

@@ -359,19 +359,28 @@ end
 --===================================================--
 
 local function CreateMainShared(self)
-	local isPlayer = self.mystyle == "player"
+	local isPlayer = (self.mystyle == "player")
 	local align = (isPlayer and "RIGHT") or "LEFT"
 
 	self:SetSize(width, size)
 	self:RegisterForClicks("AnyDown", "AnyUp")
+
 	-- 主框體
 	CreateHealthDigits(self)
-
 	local health = self.Health
+
+	-- 團隊標記
+	local marker = health:CreateTexture(nil, "OVERLAY")
+	marker:SetSize(C.RaidIconSize + 8, C.RaidIconSize + 8)
+	marker:SetTexture(G.media.raidicon)
+	marker:SetPoint("BOTTOM", health.Percent.Base, "TOP", 0, -C.DigitSize/2-4)
+	marker:Hide()
+	self.RaidTargetIndicator = marker
+
 	-- 定位點：數字或狀態圖示變寬時，原生錨點會一起移動。
+	local textEdge = health.Digits[(isPlayer and 1) or 3].Width:GetStatusBarTexture()
 	local info = CreateFrame("Frame", nil, health, "DisableUntrustedLayoutScriptsTemplate")
 	info:SetSize(1, 1)
-	local textEdge = health.Digits[(isPlayer and 1) or 3].Width:GetStatusBarTexture()
 	info:SetPoint("BOTTOM"..align, textEdge, (isPlayer and "BOTTOMLEFT") or "BOTTOMRIGHT",
 		(isPlayer and -textGap) or textGap, waterBottom)
 	self.Info = info
@@ -384,16 +393,9 @@ local function CreateMainShared(self)
 	value:SetPoint("BOTTOM"..align, info, "BOTTOM"..align, 0, 0)
 	value:SetTextColor(unpack(C.TextColor))
 	self.Value = value
-
-	-- 目標和焦點標記放在名字前面；玩家標記由狀態圖示列安排位置。
-	local marker = health:CreateTexture(nil, "OVERLAY")
-	marker:SetSize(C.RaidIconSize, C.RaidIconSize)
-	marker:SetTexture(G.media.raidicon)
-	marker:Hide()
-	self.RaidTargetIndicator = marker
 end
 
--- 目標和焦點的名字與名字前標記。
+-- 目標和焦點的名字
 local function CreateTargetInfo(self)
 	local info = self.Info
 
@@ -404,22 +406,6 @@ local function CreateTargetInfo(self)
 	name:SetTextColor(unpack(C.TextColor))
 	self.Name = name
 	self:Tag(name, "[hankk:namecolor][hankk:name]|r")
-
-	-- 團隊標記
-	local marker = self.RaidTargetIndicator
-	marker:SetPoint("LEFT", info, "BOTTOMLEFT", 0, G.ValueFS + 4 + textLineGap + (G.NameFS + 4) / 2)
-
-	local hasMarker = false
-	local function UpdateNameSpacing(shown)
-		if hasMarker == shown then return end
-		hasMarker = shown
-		self.Name:SetPoint("BOTTOMLEFT", info, "BOTTOMLEFT",
-			(shown and C.RaidIconSize + textGap) or 0, G.ValueFS + 4 + textLineGap)
-	end
-
-	-- 跟隨 oUF 的顯隱呼叫，標記隱藏或停用時收回名字前的空間。
-	hooksecurefunc(marker, "Show", function() UpdateNameSpacing(true) end)
-	hooksecurefunc(marker, "Hide", function() UpdateNameSpacing(false) end)
 end
 
 local function CreateSubShared(self, arrowText)
@@ -454,20 +440,45 @@ local function CreatePlayerStyle(self)
 	self.mystyle = "player"
 
 	CreateMainShared(self)
+
 	-- Tags
-	self:Tag(self.Value, "[powercolor][hankk:power]|r" .. ((F.GetHankkOption("HidePlayerHealth") and "") or " || [hankk:health]")
-		.. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or ""))
+	self:Tag(self.Value, "[powercolor][hankk:power]|r" ..
+		(not F.GetHankkOption("HidePlayerHealth") and " || [hankk:health]" or "") ..
+		((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or ""))
 
 	-- Elements
 	self.fade = F.GetHankkOption("Fade")
-
 	if F.GetHankkOption("PlayerThreat") then T.CreatePlayerThreatIndicator(self) end
 	if F.GetHankkOption("PlayerResources") then T.CreateClassPower(self) end
-	T.CreatePlayerStatusIndicators(self)
 	if F.GetHankkOption("PlayerTotems") then T.CreateTotemBar(self) end
+
+	-- 資訊區第二行：由右至左 額外法力，替代能量，狀態圖示，PVP圖示
+	-- 額外法力
+	T.CreateAddPower(self)
+	local anchor, point = self.Value, "TOPRIGHT"	-- 初始錨點：第一行的數值右上角
+	if self.AdditionalPower then
+		local power = self.AdditionalPower
+		power:SetPoint("BOTTOMRIGHT", anchor, point, 0, 0)
+		power.Value:SetPoint("BOTTOMRIGHT", power, "BOTTOMRIGHT", 0, 0)
+		anchor, point = power.Value, "BOTTOMLEFT"	-- 當額外法力存在時，將錨點變更為自身左下角，傳遞給替代能量使用
+	end
+	-- 替代能量
+	T.CreateAltPower(self)
+	local altPower = self.AlternativePower
+	altPower:SetPoint("BOTTOMRIGHT", anchor, point, 0, 0)
+	altPower.Value:SetPoint("BOTTOMRIGHT", altPower, "BOTTOMRIGHT", 0, 0)
+	-- 狀態圖示
+	local status = F.CreateText(self.Health, G.ValueFS, "RIGHT")
+	status:SetSize(0, C.StatusSize)
+	status:SetJustifyV("MIDDLE")
+	status:SetPoint("BOTTOMRIGHT", altPower.Value, "BOTTOMLEFT", 0, 0)
+	self:Tag(status, "[hankk:playericons]", "player")
+	self.StatusValue = status
+	-- PVP圖示
+	T.CreatePlayerPvPIndicator(self)
+
 	-- Castbar
 	T.CreateMainCastbar(self)
-
 	local castbar = self.Castbar
 	castbar:SetWidth(C.CastbarWidth)
 	castbar:SetPoint("LEFT", self, "RIGHT", castbarOffset, 0)
@@ -484,17 +495,20 @@ local function CreateTargetStyle(self)
 	CreateTargetInfo(self)
 
 	-- Tags
-	self:Tag(self.Value, "[hankk:altpower]"..((F.GetHankkOption("TargetLevel") and "[hankk:level]") or "")
-		.."[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
-		.." || [powercolor][hankk:power]|r")
+	self:Tag(self.Value, ((F.GetHankkOption("TargetLevel") and "[hankk:level]") or "").. "[hankk:health]" ..
+		((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")	.. " || [powercolor][hankk:power]|r")
 
 	-- Elements
-	T.CreateTargetAlternativePower(self)
+	T.CreateAltPower(self)
+	self.AlternativePower:SetPoint("BOTTOMLEFT", self.Info, "BOTTOMLEFT", 0, 0)
+	self.AlternativePower.Value:SetPoint("BOTTOMLEFT", self.AlternativePower, "BOTTOMLEFT", 0, 0)
+	self.Value:ClearAllPoints()
+	self.Value:SetPoint("BOTTOMLEFT", self.AlternativePower.Value, "BOTTOMRIGHT", 0, 0)
 	T.CreateTargetStatusIndicators(self)
 	T.CreateTargetAuras(self)
+
 	-- Castbar
 	T.CreateMainCastbar(self)
-
 	local castbar = self.Castbar
 	castbar:SetWidth(C.CastbarWidth)
 	castbar:SetPoint("RIGHT", self, "LEFT", -castbarOffset, 0)
@@ -511,15 +525,15 @@ local function CreateFocusStyle(self)
 	CreateTargetInfo(self)
 
 	-- Tags
-	self:Tag(self.Value, "[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
-		.." || [powercolor][hankk:power]|r")
+	self:Tag(self.Value, "[hankk:health]" ..
+		((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")	.. " || [powercolor][hankk:power]|r")
 
 	-- Elements
 	T.CreateTargetStatusIndicators(self)
 	T.CreateFocusAuras(self, C.Position.FOT[4] * focusChainScale / focusScale)
+
 	-- Castbar
 	T.CreateMainCastbar(self)
-
 	local castbar = self.Castbar
 	castbar:SetWidth(C.CastbarWidth)
 	castbar:SetPoint("RIGHT", self, "LEFT", -castbarOffset, 0)

@@ -54,11 +54,6 @@ local MediaFolder = G.MediaFolder
 	C.IncomingHealColor = {0.56, 0.65, 0.56}	-- Predicted health fill / 預估治療填色
 	C.SubHealthColor = {1, 0.65, 0.16}			-- Pet and ToT/ToTT/FoT/FoTT / 寵物/目標的目標鏈/焦點的目標鏈
 	C.TextColor = {1, 1, 1}						-- Base text color / 基礎文字底色
-	C.PlayerStatusColors = {
-		Role = {1, 0.82, 0.36},		-- Leader and assistant / 隊長與助理
-		Resting = {0.47, 0.75, 1},	-- Resting / 休息
-		Combat = {1, 0.39, 0.3},	-- Combat / 戰鬥
-	}
 
 	-- Fading / 淡出
 	C.FadeOutAlpha = 0		-- Faded opacity: 0 hidden, 1 fully visible / 淡出後透明度：0 隱藏，1 完全顯示
