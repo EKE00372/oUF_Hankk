@@ -146,7 +146,7 @@ T.CreateTargetAuras = function(self)
 	})
 	auras:AddGroup("HARMFUL|!PLAYER", {
 		maxFrameCount = maxDebuffs - maxPlayerDebuffs, showDebuffTypeBorder = true,
-		desaturateIcon = F.GetHankkOption("DesaturateOtherDebuffs"),
+		desaturateIcon = F.GetHankkOption("DebuffDesaturate"),
 		layout = {elementWidth = size, elementHeight = size, groupSpacing = 0},
 	})
 	self.Auras = auras

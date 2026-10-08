@@ -39,7 +39,7 @@ end
 -- Specialization artwork / 專精圖示
 --===================================================--
 
--- 每筆資料記錄 256px 圖格的 UV、圖集頁數、水位範圍與可見左緣。
+-- {每筆資料記錄 256px 圖格的 UV}、圖集頁數、水位範圍與可見左緣
 -- 底圖、填色和柔光共用完整圖格，按圖案可見左緣對齊。
 local specIcons = {
 	-- Druid / 德魯伊
@@ -181,7 +181,6 @@ local function CreateOtherStyle(self, size)
 	self:RegisterForClicks("AnyDown", "AnyUp")
 
 	-- 定位點固定在骷髏可見左緣、水位底部；文字往左延伸，圖示往右延伸。
-	-- 血量或狀態改變時，都不移動這個定位點。
 	local iconAnchor = CreateFrame("Frame", nil, self)
 	iconAnchor:SetSize(1, 1)
 	iconAnchor:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", -size + 38 * textureRatio, 46 * textureRatio)
@@ -227,8 +226,7 @@ local function CreateOtherStyle(self, size)
 	glow:SetBlendMode("BLEND")
 	health.Glow = glow
 
-	-- 圖格維持完整尺寸，各張圖案的可見左緣都對齊定位點。
-	-- 較窄的狀態圖示預先往左靠攏，切換時不用移動文字。
+	-- 圖格維持完整尺寸，各張圖案的可見左緣都對齊定位點。較窄的狀態圖示預先往左靠攏，切換時不移動文字。
 	health.Status = {}
 	for _, name in ipairs({"death", "ghost"}) do
 		local icon = health:CreateTexture(nil, "ARTWORK")
@@ -252,13 +250,14 @@ local function CreateOtherStyle(self, size)
 	health.IconSize, health.LayoutOwner = size, self
 	self.Health = health
 
-	-- 名字與施法條定位在主框體上。
+	-- 資訊區：名字與施法條定位在主框體上。
 	local info = CreateFrame("Frame", nil, self)
 	info:SetSize(C.InfoWidth, nameHeight)
 	self.Info = info
 	info:SetPoint("BOTTOMRIGHT", iconAnchor, "BOTTOMLEFT", -iconGap, textHeight + textLineGap)
 
-	-- 數值文字不放在水位層，讓能量文字能接在血量文字左側。
+	-- Tags
+
 	local value = F.CreateText(info, G.OtherFS, "RIGHT")
 	value:SetSize(0, textHeight)
 	value:SetPoint("BOTTOMRIGHT", info, "BOTTOMRIGHT", 0, -textHeight - textLineGap)
@@ -277,12 +276,16 @@ local function CreateOtherStyle(self, size)
 	name:SetTextColor(unpack(C.TextColor))
 	self.Name = name
 	self:Tag(name, "[hankk:namecolor]"..G.NameTag.."|r")
+
+	-- Castbar
 	if self.mystyle ~= "party" then
 		info:SetFrameLevel(self:GetFrameLevel() + 4)
 		-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
 		T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, info)
 		self.Castbar:SetPoint("LEFT", info, "LEFT", 1, 0)
 	end
+
+	-- Elements
 
 	-- 隊友標記放在名字旁，首領與競技場標記維持骷髏上的位置。
 	local raidIcon = info:CreateTexture(nil, "OVERLAY", nil, 4)
@@ -303,7 +306,11 @@ end
 
 local function CreateBossStyle(self)
 	CreateOtherStyle(self, C.BossSize)
+
+	-- Tags
 	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
+
+	-- Elements
 	T.CreateBossAuras(self)
 end
 
@@ -339,7 +346,11 @@ end
 
 local function CreateArenaStyle(self, unit)
 	CreateOtherStyle(self, C.BossSize)
+
+	-- Tags
 	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
+
+	-- Elements
 	T.CreateArenaAuras(self)
 	self.ArenaIndex = tonumber(unit:match("^arena(%d+)$"))
 	local health = self.Health
@@ -545,7 +556,7 @@ do
 	oUF:AddElement("HankkPartySpec", Update, Enable, Disable)
 end
 
--- 所有職責的隊友都顯示仇恨狀態 1～3；顏色由 oUF 回呼提供。
+-- 所有職責的隊友都顯示仇恨狀態 1～3；顏色由 oUF callback 提供。
 local function PostUpdatePartyThreat(element, unit, status, color)
 	local glow = element.Glow
 	if status and status > 0 then
@@ -561,6 +572,7 @@ local function CreatePartyStyle(self, unit)
 	self.mystyle = "party"
 	CreateOtherStyle(self, C.PartySize)
 
+	-- Elements
 	-- 隊友標記顯示時才讓名字左移；隊友沒有施法條需要一起調整。
 	local raidIcon = self.RaidTargetIndicator
 	hooksecurefunc(raidIcon, "Show", function()
@@ -619,14 +631,17 @@ local function CreatePartyStyle(self, unit)
 	offline.Glow = offlineGlow
 	health.Status.offline = offline
 	T.CreatePartyAuras(self)
+
+	-- Tags
 	if F.GetHankkOption("Absorb") then
 		self:Tag(self.Value, ((F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%") ..
 			"[|cffffff00+$>hankk:absorbs<$|r]")
 	end
 	self:Tag(self.PowerValue, "[hankk:partypower]")
 
+	-- Elements
 	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。
-	if F.GetHankkOption("PartyThreatHighlight") then
+	if F.GetHankkOption("PartyThreat") then
 		local indicator = CreateFrame("Frame", nil, self)
 		indicator:EnableMouse(false)
 		indicator.Glow = self.Health.Glow
@@ -643,7 +658,7 @@ local function CreatePartyStyle(self, unit)
 	role:SetDesaturated(true)
 	role:SetTexCoord(0, 1, 0, 1)
 	role:Hide()
-	-- 替換材質，舊路徑則由回呼依官方提供的公開職責換回圖案。
+	-- 替換材質，舊路徑則由 callback 依官方提供的公開職責換回圖案。
 	role.tankAtlas = G.media.role_tank
 	role.healerAtlas = G.media.role_healer
 	role.damageAtlas = G.media.role_dps

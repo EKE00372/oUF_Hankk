@@ -6,7 +6,7 @@ local _, ns = ...
 local oUF = ns.oUF
 local C, F, G, T = ns[1], ns[2], ns[3], ns[4]
 
--- 資源文字與玩家上方狀態列的固定間距。
+-- 資源文字與圖示的固定間距。
 local textGap = 3
 
 --===================================================--
@@ -329,7 +329,6 @@ end
 -- Threat highlight / 仇恨高亮
 --===================================================--
 
--- 仇恨高亮顏色在 tags 裡。
 local function PostUpdatePlayerThreat(element, unit, status, color)
 	local r, g, b = 0, 0, 0
 	if unit == "player" and IsInGroup() and status and status > 0 then r, g, b = color:GetRGB() end
@@ -504,7 +503,7 @@ T.CreatePlayerStatusIndicators = function(self)
 		powers[#powers + 1] = power
 	end
 	local alternative = CreateSecondaryPowerText(self)
-	-- 這兩個官方回呼有 unit 參數；AdditionalPower 的回呼則沒有。
+	-- 這兩個官方 callback 有 unit 參數；AdditionalPower 的 callback 則沒有。
 	alternative.PostUpdate = function(element, unit, current, minimum, maximum)
 		UpdateSecondaryPowerText(element, current, maximum)
 	end
@@ -586,7 +585,7 @@ T.CreatePlayerStatusIndicators = function(self)
 		end
 	end
 
-	-- 所有物件建立後，再統一掛上顯隱回呼。
+	-- 所有物件建立後，再統一掛上顯隱 callback。
 	for _, power in ipairs(powers) do
 		hooksecurefunc(power, "Show", function() UpdateSpacing(power, true) end)
 		hooksecurefunc(power, "Hide", function() UpdateSpacing(power, false) end)
@@ -607,14 +606,14 @@ T.CreatePlayerStatusIndicators = function(self)
 	UpdateSpacing()
 end
 
--- 圖示放在子框上，畫在名字前面，不讓文字蓋住圖示。
+-- 目標狀態圖示：放在子框上，畫在名字前面，不讓文字蓋住圖示。
 T.CreateTargetStatusIndicators = function(self)
 	local size = C.StatusSize + 2
 	local overlay = CreateFrame("Frame", nil, self.Info, "DisableUntrustedLayoutScriptsTemplate")
 	overlay:SetSize(size, size)
 	overlay:SetPoint("CENTER", self.Name, "CENTER", 0, 0)
+	-- 置中排列
 	local icons = {}
-	-- 只排列顯示中的圖示，整組保持置中，相鄰圖示重疊 4 單位。
 	local function UpdateSpacing(icon, shown)
 		if icon.isActive == shown then return end
 		icon.isActive = shown
@@ -631,6 +630,7 @@ T.CreateTargetStatusIndicators = function(self)
 			end
 		end
 	end
+	-- 位面、召喚、戰復
 	for _, name in ipairs({"PhaseIndicator", "SummonIndicator", "ResurrectIndicator"}) do
 		local icon = overlay:CreateTexture(nil, "OVERLAY")
 		icon:SetSize(size, size)
@@ -644,7 +644,6 @@ T.CreateTargetStatusIndicators = function(self)
 		hooksecurefunc(icon, "Show", function() UpdateSpacing(icon, true) end)
 		hooksecurefunc(icon, "Hide", function() UpdateSpacing(icon, false) end)
 	end
-	-- 暴雪圖案、狀態變化與有效單位更新都由 oUF 提供。
 end
 
 -- Health 已處理血量、連線與整框更新，但沒有涵蓋釋放靈魂。
@@ -670,5 +669,5 @@ local function DisableStatusEvents(self)
 	self:UnregisterEvent("PLAYER_UNGHOST", RefreshStatus)
 end
 
--- 不另加整框刷新回呼，這部分由官方 Health 元素處理。
+-- 不另加整框刷新 callback，這部分由官方 Health 元素處理。
 oUF:AddElement("HankkStatusEvents", nil, EnableStatusEvents, DisableStatusEvents)

@@ -17,7 +17,6 @@ local FormatZero = F.FormatZero
 -- Threat colors / 仇恨顏色
 --===================================================--
 
--- 沿用 Ruri 的仇恨色，不使用名條反轉時的藍色。
 oUF.colors.threat[1] = oUF:CreateColor(.4, .1, .9) -- 尚未承擔，但仇恨已超過承擔者
 oUF.colors.threat[2] = oUF:CreateColor(.9, .1, .9) -- 正承擔仇恨，但不穩定
 oUF.colors.threat[3] = oUF:CreateColor(.9, .1, .4) -- 穩定承擔仇恨
@@ -59,6 +58,7 @@ oUF.Tags.Methods["hankk:altpower"] = function()
 	if power then return power.valueText end
 end
 
+-- 血量：當前值/最大值
 oUF.Tags.Methods["hankk:health"] = function(unit)
 	local current = F.NumberAbbrValue(UnitHealth(unit))
 	if F.GetHankkOption("CurrentValuesOnly") then return current end
@@ -67,13 +67,14 @@ oUF.Tags.Methods["hankk:health"] = function(unit)
 end
 oUF.Tags.Events["hankk:health"] = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION"
 
--- 吸收盾：縮寫數值；零值留空，顏色與加號由樣式的條件前後綴提供。
+-- 吸收盾：縮寫數值
 oUF.Tags.Methods["hankk:absorbs"] = function(unit)
 	local amount = UnitGetTotalAbsorbs(unit)
 	return FormatZero(amount, F.NumberAbbrValue(amount))
 end
 oUF.Tags.Events["hankk:absorbs"] = "UNIT_ABSORB_AMOUNT_CHANGED"
 
+-- 能量：當前值/最大值
 oUF.Tags.Methods["hankk:power"] = function(unit)
 	local current = F.NumberAbbrValue(UnitPower(unit))
 	
@@ -82,7 +83,7 @@ oUF.Tags.Methods["hankk:power"] = function(unit)
 end
 oUF.Tags.Events["hankk:power"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
--- 首領、競技場與隊伍法力共用原生零值格式，連同分隔符一起留空。
+-- 首領與競技場能量：當前值
 oUF.Tags.Methods["hankk:otherpower"] = function(unit)
 	local amount = UnitPower(unit)
 	local text = C_StringUtil.WrapString(F.NumberAbbrValue(amount), nil, "|r ||")
@@ -90,8 +91,7 @@ oUF.Tags.Methods["hankk:otherpower"] = function(unit)
 end
 oUF.Tags.Events["hankk:otherpower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
--- 治療隊友仍有法力但未滿 1% 時顯示 0；以原始法力判斷零值留空。
--- 啟用簡化數值顯示時，與隊友血量一樣省略百分號。
+-- 治療隊友法力：百分比
 local partyManaColor = oUF.colors.power.MANA:GenerateHexColorMarkup()
 oUF.Tags.Methods["hankk:partypower"] = function(unit)
 	local role = UnitGroupRolesAssigned(_FRAME.PartyUnit)
@@ -110,10 +110,9 @@ oUF.Tags.SharedEvents.ROLE_CHANGED_INFORM = true
 -- Target level / 目標等級
 --===================================================--
 
--- 與玩家同級時隱藏整個前綴；難度顏色直接交給暴雪決定。
 oUF.Tags.Methods["hankk:level"] = function(unit)
 	local level = oUF.Tags.Methods.level(unit)
-	if level == UnitEffectiveLevel("player") then return end
+	if level == UnitEffectiveLevel("player") then return end	-- 與玩家同級時隱藏
 
 	local classification = UnitClassification(unit)
 	local suffix = ""
@@ -123,7 +122,7 @@ oUF.Tags.Methods["hankk:level"] = function(unit)
 	end
 	local color = GetDifficultyColor(GetContentDifficultyCreatureForPlayer(unit))
 
-	-- 血量前還原顏色；隱藏前綴時，結尾空格也一起消失。
+	-- 血量前還原顏色
 	return format("|cff%02x%02x%02x%s%s|r ", color.r * 255, color.g * 255, color.b * 255, level, suffix)
 end
 oUF.Tags.Events["hankk:level"] = "UNIT_LEVEL PLAYER_LEVEL_UP PLAYER_LEVEL_CHANGED UNIT_CLASSIFICATION_CHANGED UNIT_FACTION"
@@ -158,7 +157,7 @@ if G.IsForever then
 	G.NameTag = "[hankk:forevername]"
 	oUF.Tags.Methods["hankk:forevername"] = function(unit, realUnit)
 		local displayedUnit = realUnit or unit
-		if F.GetHankkOption("ShowFirstNameOnly") then
+		if F.GetHankkOption("FirstNameOnly") then
 			return UnitNameUnmodified(displayedUnit)
 		end
 		return NameUtil.GetUnmodifiedUnitFullName(displayedUnit)
@@ -166,9 +165,7 @@ if G.IsForever then
 	oUF.Tags.Events["hankk:forevername"] = "UNIT_NAME_UPDATE"
 end
 
--- FOREVER 獵人寵物沿用舊 Hank 的文字表情。顏色與後方空格一起由標籤輸出，
--- 沒有寵物或切到載具時，就不會留下空位。
--- 普通心情的直線要寫成兩個管線符號，才不會吃掉後面的顏色還原碼。
+-- FOREVER 獵人寵物心情值
 local petHappinessFaces = {":<", ":||", ":D"}
 oUF.Tags.Methods["hankk:pethappiness"] = function(unit)
 	if unit ~= "pet" then return end

@@ -17,7 +17,7 @@ local MediaFolder = G.MediaFolder
 	-- Font
 	G.Font = MediaFolder.."Fonts\\HankkSansDIN.ttf"
 
-	-- Font Flag, "THICKOUTLINE", "OUTLINE", "NONE"
+	-- Outline flags: "THICKOUTLINE", "OUTLINE", "NONE" / 描邊選項
     G.FontFlag = "THICKOUTLINE"	-- General text outline / 一般文字描邊
 	G.AuraFontFlag = "OUTLINE"	-- Aura text outline / 光環文字描邊
 	
@@ -50,11 +50,10 @@ local MediaFolder = G.MediaFolder
 
 	-- Colors / 顏色
 
-	C.HealthColor = {1, 0.65, 0.16}		-- Main health percent digits / 主體血量百分比顏色
+	C.HealthColor = {1, 0.65, 0.16}				-- Main health percent digits / 主體血量百分比顏色
 	C.IncomingHealColor = {0.56, 0.65, 0.56}	-- Predicted health fill / 預估治療填色
-	C.SubHealthColor = {1, 0.65, 0.16}	-- Pet and ToT/ToTT/FoT/FoTT / 寵物/目標的目標鏈/焦點的目標鏈
-	C.TextColor = {1, 1, 1}				-- Base text color / 文字底色
-	
+	C.SubHealthColor = {1, 0.65, 0.16}			-- Pet and ToT/ToTT/FoT/FoTT / 寵物/目標的目標鏈/焦點的目標鏈
+	C.TextColor = {1, 1, 1}						-- Base text color / 基礎文字底色
 	C.PlayerStatusColors = {
 		Role = {1, 0.82, 0.36},		-- Leader and assistant / 隊長與助理
 		Resting = {0.47, 0.75, 1},	-- Resting / 休息
@@ -91,18 +90,18 @@ local MediaFolder = G.MediaFolder
 	-- Frame point, reference frame, reference point, X, Y. Positive X moves right; positive Y moves up.
 	-- 依序是框體對齊點、參考框體、參考點、左右距離、上下距離。正數往右或往上。
 	C.Position = {
-		-- Player = {"RIGHT", UIParent, "CENTER", -220, -180},
+		-- Player = {"RIGHT", UIParent, "CENTER", -220, -180}, -- Player / 玩家
 		Pet = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -12, -4},
 		
-		-- Target = {"LEFT", UIParent, "CENTER", 220, -180},
+		-- Target = {"LEFT", UIParent, "CENTER", 220, -180}, -- Target / 目標
 		TOT = {"BOTTOMLEFT", "oUF_HankkTarget", "TOPLEFT", 24, -4},
 		TOTT = {"BOTTOMLEFT", "oUF_HankkToT", "TOPLEFT", 0, 0},
 
-		-- Focus = {"CENTER", UIParent, "CENTER", 0, -270},
+		-- Focus = {"CENTER", UIParent, "CENTER", 0, -270}, -- Focus / 專注
 		FOT = {"BOTTOMLEFT", "oUF_HankkFocus", "TOPLEFT", 24, -4},
 		FOTT = {"BOTTOMLEFT", "oUF_HankkFoT", "TOPLEFT", 0, 0},
 		
-		-- Boss = {"RIGHT", UIParent, "RIGHT", -140, 185},
-		-- Arena = {"RIGHT", UIParent, "RIGHT", -140, 185},
-		-- Party = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -64, 60},
+		-- Boss = {"RIGHT", UIParent, "RIGHT", -140, 185}, -- Boss / 首領
+		-- Arena = {"RIGHT", UIParent, "RIGHT", -140, 185}, -- Arena / 競技場
+		-- Party = {"BOTTOMRIGHT", "oUF_HankkPlayer", "TOPRIGHT", -64, 60}, -- Party / 隊友
 	}

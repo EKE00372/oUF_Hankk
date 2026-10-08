@@ -38,7 +38,7 @@ local function HideManager(manager)
 	CancelFadeOut()
 	local token = fadeOutToken
 
-	-- 每次移出取代上次的等待；移回時讓舊回呼失效，不需持續輪詢。
+	-- 每次移出取代上次的等待；移回時讓舊 callback 失效，不需持續輪詢。
 	C_Timer.After(fadeOutDelay, function()
 		if token ~= fadeOutToken then return end
 		if not manager.collapsed or manager:IsMouseOver() then return end

@@ -13,10 +13,7 @@ local addon, ns = ...
 
 local F, G = ns[2], ns[3]
 
-	-- Decide the client once so Hankk features use the same Forever boundary.
-	-- 只在這裡判斷遊戲版本，讓各項 FOREVER 功能使用相同依據。
 	G.IsForever = LE_EXPANSION_LEVEL_CURRENT == LE_EXPANSION_CLASSIC
-
 	G.MediaFolder = "Interface\\AddOns\\"..addon.."\\Media\\"
 
 local MediaFolder = G.MediaFolder
@@ -43,11 +40,11 @@ local MediaFolder = G.MediaFolder
 		statusicons = MediaFolder.."Textures\\statusicons.tga", -- Status icons / 狀態圖示
 
 		-- Spec / 專精
-		specbase1 = MediaFolder.."Textures\\Icons\\Spec_base-1.tga", -- 灰底
+		specbase1 = MediaFolder.."Textures\\Icons\\Spec_base-1.tga", -- Base texture / 灰底
 		specbase2 = MediaFolder.."Textures\\Icons\\Spec_base-2.tga",
-		specfill1 = MediaFolder.."Textures\\Icons\\Spec_fill-1.tga", -- 填色
+		specfill1 = MediaFolder.."Textures\\Icons\\Spec_fill-1.tga", -- Fill texture / 填色
 		specfill2 = MediaFolder.."Textures\\Icons\\Spec_fill-2.tga",
-		specglow1 = MediaFolder.."Textures\\Icons\\Spec_glow-1.tga", -- 光暈
+		specglow1 = MediaFolder.."Textures\\Icons\\Spec_glow-1.tga", -- Glow texture / 光暈
 		specglow2 = MediaFolder.."Textures\\Icons\\Spec_glow-2.tga",
 
 		-- Party roles / 隊伍職責
@@ -64,7 +61,7 @@ local MediaFolder = G.MediaFolder
         arcane = MediaFolder.."Textures\\Resources\\arcane.tga",        -- Mage orb / 秘法充能
 		holypower = MediaFolder.."Textures\\Resources\\holypower.tga",  -- Holy power / 聖能
 		soulshards = MediaFolder.."Textures\\Resources\\soulshards.tga",-- Soul shard / 靈魂碎片
-		tipspear = MediaFolder.."Textures\\Resources\\tipspear.tga",  -- Tip of the Spear / 生存獵長矛之尖
+		tipspear = MediaFolder.."Textures\\Resources\\tipspear.tga",  	-- Tip of the Spear / 生存獵長矛之尖
 		totems = MediaFolder.."Textures\\Resources\\totems.tga",        -- Maelstrom Weapon / 漩渦武器充能柱
 	}
 
@@ -98,11 +95,11 @@ local MediaFolder = G.MediaFolder
 			{key = "PlayerTotems", default = true},
 			{key = "Absorb", default = true, tooltip = "AbsorbTip"},
 			{key = "HealPrediction", default = true, tooltip = "HealPredictionTip"},
-			{key = "PartyThreatHighlight", default = true},
-			{key = "PlayerThreatHighlight", default = true, tooltip = "PlayerThreatHighlightTip"},
-			{key = "ShowTargetLevel", default = false, tooltip = "TargetLevelTip"},
-			{key = "ShowFirstNameOnly", default = false, foreverOnly = true},
-			{key = "DesaturateOtherDebuffs", default = not G.IsForever, tooltip = "DesaturateOtherDebuffsTip", foreverOnly = false},
+			{key = "PartyThreat", default = true},
+			{key = "PlayerThreat", default = true, tooltip = "PlayerThreatTip"},
+			{key = "TargetLevel", default = false, tooltip = "TargetLevelTip"},
+			{key = "FirstNameOnly", default = false, foreverOnly = true},
+			{key = "DebuffDesaturate", default = not G.IsForever, tooltip = "DebuffDesaturateTip", foreverOnly = false},
 			{key = "Fade", default = true, tooltip = "FadeTip"},
 
 		}},
@@ -156,10 +153,24 @@ local MediaFolder = G.MediaFolder
 	dbLoader:SetScript("OnEvent", function(self, event, name)
 		if name ~= addon then return end
 		local db = GetOptionsDB()
+		-- Rename stored options; valid new values take priority.
+		-- 移轉舊設定名稱；有效的新設定值優先。
+		for oldKey, newKey in pairs({
+			PartyThreatHighlight = "PartyThreat",
+			PlayerThreatHighlight = "PlayerThreat",
+			DesaturateOtherDebuffs = "DebuffDesaturate",
+			ShowTargetLevel = "TargetLevel",
+			ShowFirstNameOnly = "FirstNameOnly",
+		}) do
+			if type(db[newKey]) ~= "boolean" and type(db[oldKey]) == "boolean" then
+				db[newKey] = db[oldKey]
+			end
+			db[oldKey] = nil
+		end
 		-- Carry the shared switch over to both new options; explicit new values take priority.
 		-- 將共用開關帶到兩個新選項；已儲存的新選項優先。
 		if type(db.ThreatHighlight) == "boolean" then
-			for _, key in ipairs({"PartyThreatHighlight", "PlayerThreatHighlight"}) do
+			for _, key in ipairs({"PartyThreat", "PlayerThreat"}) do
 				if type(db[key]) ~= "boolean" then db[key] = db.ThreatHighlight end
 			end
 		end

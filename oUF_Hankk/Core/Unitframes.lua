@@ -137,7 +137,7 @@ local function PostUpdateHealth(health, unit)
 		health.activeStatus = status
 	end
 
-	-- 裁切範圍與字寬都直接交給原生物件；文字跟隨整組數字的外緣。
+	-- 將裁切範圍與字寬都交給原生物件；文字跟隨整組數字的外緣。
 	local statusSlot = (health.__owner.mystyle == "player" and 3) or 1
 	for slot = 1, 3 do
 		local digit = health.Digits[slot]
@@ -165,7 +165,9 @@ local function CreateHealthDigits(self)
 	local isPlayer = self.mystyle == "player"
 	local align = (isPlayer and "RIGHT") or "LEFT"
 
-	-- 依 oUF Health 元素的標準寫法建立一個透明血條，利用填充範圍控制數字的水位裁切。
+	-- [[ 數字 ]] --
+
+	-- 依 oUF Health 元素的標準寫法建立一個透明血條，利用該狀態條的填充範圍控制數字的水位裁切。
 	local health = CreateFrame("StatusBar", nil, self, "DisableUntrustedLayoutScriptsTemplate")
 	health:SetSize(width, waterHeight)
 	health:SetPoint("BOTTOMLEFT", self, "BOTTOMLEFT", 0, waterBottom)
@@ -255,7 +257,8 @@ local function CreateHealthDigits(self)
 
 		health.Digits[slot] = {Base = base, Fill = fill, Healing = healingFill, Glow = glow, Width = digitWidth}
 	end
-	-- 玩家從右端往左接，目標／焦點從左端往右接；空格字寬為零，不留占位。
+
+	-- 玩家從右端往左接，目標和焦點從左端往右接；空格字寬為零，不留占位。
 	for slot = 1, 3 do
 		local digitWidth = health.Digits[slot].Width
 		if isPlayer then
@@ -350,7 +353,7 @@ end
 -- Shared builders / 共用建立函式
 --===================================================--
 
--- 小型焦點使用 0.7 倍，目標鏈文字使用 0.875 倍。
+-- 焦點倍率：小型焦點使用 0.7 倍，目標鏈文字使用 0.875 倍。
 local smallFocusScale = .7
 local smallFocusChainScale = (smallFocusScale * 1.25)
 local focusScale, focusChainScale
@@ -361,16 +364,19 @@ local function CreateMainShared(self)
 
 	self:SetSize(width, size)
 	self:RegisterForClicks("AnyDown", "AnyUp")
+	-- 主框體
 	CreateHealthDigits(self)
 
 	local health = self.Health
-	-- 直接接整組數字靠近文字的那一端；數字或狀態圖示變寬時，原生錨點會一起移動。
+	-- 定位點：數字或狀態圖示變寬時，原生錨點會一起移動。
 	local info = CreateFrame("Frame", nil, health, "DisableUntrustedLayoutScriptsTemplate")
 	info:SetSize(1, 1)
 	local textEdge = health.Digits[(isPlayer and 1) or 3].Width:GetStatusBarTexture()
 	info:SetPoint("BOTTOM"..align, textEdge, (isPlayer and "BOTTOMLEFT") or "BOTTOMRIGHT",
 		(isPlayer and -textGap) or textGap, waterBottom)
 	self.Info = info
+
+	-- Tags
 
 	-- 玩家數值行向左延伸；目標和焦點文字向右延伸。
 	local value = F.CreateText(info, G.ValueFS, align)
@@ -418,8 +424,9 @@ local function CreateSubShared(self, arrowText)
 	self:SetSize(C.SubWidth, G.SubFS + 2)
 	self:RegisterForClicks("AnyDown", "AnyUp")
 
+	-- Tags
 	local name = F.CreateText(self, G.SubFS, align)
-	name:SetSize(0, G.SubFS + 2)	-- 可點擊範圍固定，文字依內容自然伸展。
+	name:SetSize(0, G.SubFS + 2)
 	name:SetPoint(align, self, align, 0, 0)
 	name:SetTextColor(unpack(C.SubHealthColor))
 	self.Name = name
@@ -443,15 +450,18 @@ local function CreatePlayerStyle(self)
 	self.mystyle = "player"
 
 	CreateMainShared(self)
-	-- 隱藏具體血量時，也移除分隔線；大百分比與水位不受影響。
+	-- Tags
 	self:Tag(self.Value, "[powercolor][hankk:power]|r" .. ((F.GetHankkOption("HidePlayerHealth") and "") or " || [hankk:health]")
 		.. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or ""))
+
+	-- Elements
 	self.fade = F.GetHankkOption("Fade")
 
-	if F.GetHankkOption("PlayerThreatHighlight") then T.CreatePlayerThreatIndicator(self) end
+	if F.GetHankkOption("PlayerThreat") then T.CreatePlayerThreatIndicator(self) end
 	if F.GetHankkOption("PlayerResources") then T.CreateClassPower(self) end
 	T.CreatePlayerStatusIndicators(self)
 	if F.GetHankkOption("PlayerTotems") then T.CreateTotemBar(self) end
+	-- Castbar
 	T.CreateMainCastbar(self)
 
 	local castbar = self.Castbar
@@ -467,12 +477,16 @@ local function CreateTargetStyle(self)
 	self.mystyle = "target"
 
 	CreateMainShared(self)
-	self:Tag(self.Value, "[hankk:altpower]"..((F.GetHankkOption("ShowTargetLevel") and "[hankk:level]") or "")
+
+	-- Tags
+	self:Tag(self.Value, "[hankk:altpower]"..((F.GetHankkOption("TargetLevel") and "[hankk:level]") or "")
 		.."[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
 		.." || [powercolor][hankk:power]|r")
 
+	-- Elements
 	T.CreateTargetAlternativePower(self)
 	T.CreateTargetStatusIndicators(self)
+	-- Castbar
 	T.CreateMainCastbar(self)
 
 	local castbar = self.Castbar
@@ -490,10 +504,14 @@ local function CreateFocusStyle(self)
 	self.mystyle = "focus"
 
 	CreateMainShared(self)
+
+	-- Tags
 	self:Tag(self.Value, "[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
 		.." || [powercolor][hankk:power]|r")
 
+	-- Elements
 	T.CreateTargetStatusIndicators(self)
+	-- Castbar
 	T.CreateMainCastbar(self)
 
 	local castbar = self.Castbar
@@ -512,6 +530,7 @@ local function CreatePetStyle(self)
 	self.fade = F.GetHankkOption("Fade")
 	CreateSubShared(self)
 
+	-- Tags
 	local tag = "[perhp]%@[hankk:namecolor]"..G.NameTag.."|r"
 	if G.IsForever and UnitClassBase("player") == "HUNTER" then
 		tag = "[hankk:pethappiness]" .. tag
@@ -523,6 +542,8 @@ local function CreateToTStyle(self)
 	self.mystyle = "tot"
 
 	CreateSubShared(self, "›")
+
+	-- Tags
 	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
@@ -531,6 +552,8 @@ local function CreateToTTStyle(self)
 	self.mystyle = "tott"
 
 	CreateSubShared(self, "»")
+
+	-- Tags
 	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
@@ -539,6 +562,8 @@ local function CreateFoTStyle(self)
 	self.mystyle = "fot"
 
 	CreateSubShared(self, "›")
+
+	-- Tags
 	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
@@ -547,6 +572,8 @@ local function CreateFoTTStyle(self)
 	self.mystyle = "fott"
 
 	CreateSubShared(self, "»")
+
+	-- Tags
 	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
@@ -596,8 +623,8 @@ oUF:Factory(function(self)
 	self:SetActiveStyle("HankkFocus")
 	local focus = self:Spawn("focus", "oUF_HankkFocus")
 	focus:SetScale(focusScale)
+	-- 預設座標以小型布局為基準，錨點為框架中心，完整尺寸會四面等比增大，因此把焦點下移相同距離，讓焦點高度保持原位。
 	local focusY = -270
-	-- 預設座標以小型布局為基準，錨點為框架中心，完整尺寸會四面等比增大，因此把焦點往下移相同距離，讓焦點高度處於原位。
 	if focusScale == 1 then
 		local focusTopIncrease = size * (1 - smallFocusScale) / 2
 		local chainAreaHeight = 2 * (G.SubFS + 2) + C.Position.FOT[5]

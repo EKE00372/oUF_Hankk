@@ -125,7 +125,7 @@ T.LinkTotemsToPet = function(self, pet)
 			bar:SetPoint("BOTTOMRIGHT", self, "TOPRIGHT", -24, 0)
 		end
 	end
-	-- 從顯示／隱藏回呼傳入固定狀態，不讀寵物的受限文字、可見性或座標。
+	-- 從顯隱 callback 傳入固定狀態，不讀寵物的受限文字、可見性或座標。
 	pet:HookScript("OnShow", function() UpdatePosition(true) end)
 	pet:HookScript("OnHide", function() UpdatePosition(false) end)
 	-- 公開的目前單位也能處理 /reload 時已在載具中的情況。
