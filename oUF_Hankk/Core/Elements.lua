@@ -645,29 +645,3 @@ T.CreateTargetStatusIndicators = function(self)
 		hooksecurefunc(icon, "Hide", function() UpdateSpacing(icon, false) end)
 	end
 end
-
--- Health 已處理血量、連線與整框更新，但沒有涵蓋釋放靈魂。
--- 這裡只補缺少的事件，顯示仍由 Health 照常更新。
-local function RefreshStatus(self, event, unit)
-	if not self.__unit or (unit and unit ~= self.__unit) then return end
-	if self:IsElementEnabled("Health") then self.Health:ForceUpdate() end
-end
-
-local function EnableStatusEvents(self)
-	if not self.Health or not self.Health.Status then return end
-	self:RegisterEvent("UNIT_FLAGS", RefreshStatus)
-	self:RegisterEvent("PLAYER_ALIVE", RefreshStatus, true)
-	self:RegisterEvent("PLAYER_DEAD", RefreshStatus, true)
-	self:RegisterEvent("PLAYER_UNGHOST", RefreshStatus, true)
-	return true
-end
-
-local function DisableStatusEvents(self)
-	self:UnregisterEvent("UNIT_FLAGS", RefreshStatus)
-	self:UnregisterEvent("PLAYER_ALIVE", RefreshStatus)
-	self:UnregisterEvent("PLAYER_DEAD", RefreshStatus)
-	self:UnregisterEvent("PLAYER_UNGHOST", RefreshStatus)
-end
-
--- 不另加整框刷新 callback，這部分由官方 Health 元素處理。
-oUF:AddElement("HankkStatusEvents", nil, EnableStatusEvents, DisableStatusEvents)

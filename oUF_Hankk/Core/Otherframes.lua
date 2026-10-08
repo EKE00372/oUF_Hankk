@@ -10,7 +10,7 @@ local textGap, textLineGap = 2, G.OtherTextLineGap	-- 文字資訊區水平間�
 local iconGap = 4					-- 血量圖示與文字資訊區水平間距
 local textHeight = G.OtherFS		-- 文字資訊區數值字高
 local nameHeight = (G.OtherFS - 4)	-- 文字資訊區名字字高
-local statusTextInset = {death = 65, ghost = 54, offline = 85}
+local statusTextInset = {death = 65, offline = 85}
 
 -- 設定狀態圖示
 local function SetHealthStatus(health, status)
@@ -28,11 +28,10 @@ local function SetHealthStatus(health, status)
 	end
 end
 
--- 更新狀態圖，只有隊友框提供離線圖示；離線優先於死亡與釋放靈魂。
+-- 更新狀態圖；只有隊友框提供離線圖示，死亡與放魂共用十字架。
 local function PostUpdateHealth(health, unit)
 	SetHealthStatus(health, (health.Status.offline and not UnitIsConnected(unit) and health.Status.offline)
-		or (UnitIsGhost(unit) and health.Status.ghost)
-		or (UnitIsDead(unit) and health.Status.death))
+		or (UnitIsDeadOrGhost(unit) and health.Status.death))
 end
 
 --===================================================--
@@ -227,25 +226,22 @@ local function CreateOtherStyle(self, size)
 	health.Glow = glow
 
 	-- 圖格維持完整尺寸，各張圖案的可見左緣都對齊定位點。較窄的狀態圖示預先往左靠攏，切換時不移動文字。
-	health.Status = {}
-	for _, name in ipairs({"death", "ghost"}) do
-		local icon = health:CreateTexture(nil, "ARTWORK")
-		icon:SetSize(size, size)
-		icon:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -statusTextInset[name] * textureRatio, -46 * textureRatio)
-		icon:SetTexture(G.media.digitbase)
-		icon:SetSpriteSheetCell(G.HealthIconCells[name], 4, 4)
-		icon:Hide()
+	local death = health:CreateTexture(nil, "ARTWORK")
+	death:SetSize(size, size)
+	death:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -statusTextInset.death * textureRatio, -46 * textureRatio)
+	death:SetTexture(G.media.digitbase)
+	death:SetSpriteSheetCell(G.HealthIconCells.death, 4, 4)
+	death:Hide()
 
-		local glow = health:CreateTexture(nil, "BACKGROUND", nil, -1)
-		glow:SetAllPoints(icon)
-		glow:SetTexture(G.media.digitglow)
-		glow:SetSpriteSheetCell(G.HealthIconCells[name], 4, 4)
-		glow:SetVertexColor(0, 0, 0)
-		glow:SetBlendMode("BLEND")
-		glow:Hide()
-		icon.Glow = glow
-		health.Status[name] = icon
-	end
+	local deathGlow = health:CreateTexture(nil, "BACKGROUND", nil, -1)
+	deathGlow:SetAllPoints(death)
+	deathGlow:SetTexture(G.media.digitglow)
+	deathGlow:SetSpriteSheetCell(G.HealthIconCells.death, 4, 4)
+	deathGlow:SetVertexColor(0, 0, 0)
+	deathGlow:SetBlendMode("BLEND")
+	deathGlow:Hide()
+	death.Glow = deathGlow
+	health.Status = {death = death}
 	health.PostUpdate = PostUpdateHealth
 	health.IconSize, health.LayoutOwner = size, self
 	self.Health = health
@@ -613,7 +609,7 @@ local function CreatePartyStyle(self, unit)
 		health.incomingHealOverflow = 1
 	end
 
-	-- 沿用死亡／靈魂切換，僅為隊友補上固定大小、不受水位裁切的離線圖示。
+	-- 沿用死亡與放魂的十字架，僅為隊友補上固定大小、不受水位裁切的離線圖示。
 	local offline = health:CreateTexture(nil, "ARTWORK")
 	offline:SetSize(health.IconSize, health.IconSize)
 	offline:SetPoint("BOTTOMLEFT", self.IconAnchor, "BOTTOMLEFT",

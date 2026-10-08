@@ -34,7 +34,7 @@ for digit = 0, 9 do
 end
 local blankDigit = {width = 0, texCoords = CreateColor(2/4, 3/4, 2/4, 3/4)}
 -- 狀態圖示的排版寬度仍以材質像素記錄，建立圖示時換算。
-local statusAdvance = {death = 147.02857144932028, ghost = 170.74285716695266, offline = 109.46100923914561}
+local statusAdvance = {death = 147.02857144932028, offline = 109.46100923914561}
 
 --===================================================--
 -- Digit lookup / 數字對照
@@ -107,12 +107,11 @@ local function PostUpdateHealthColor(health, unit, color)
 	health:SetStatusBarColor(1, 1, 1, 0)
 end
 
--- 離線優先於靈魂與死亡；沒有這些狀態時顯示血量數字。
+-- 離線優先，死亡與放魂共用十字架，其餘狀態顯示血量數字。
 local function PostUpdateHealth(health, unit)
 	local connected = UnitIsConnected(unit)
 	local status = (not connected and health.Status.offline)
-		or (UnitIsGhost(unit) and health.Status.ghost)
-		or (UnitIsDead(unit) and health.Status.death)
+		or (UnitIsDeadOrGhost(unit) and health.Status.death)
 
 	-- 單位狀態改變時更新。
 	if health.activeStatus ~= status then
@@ -314,6 +313,8 @@ local function CreateHealthDigits(self)
 	percentGlow:SetBlendMode("BLEND")
 
 	health.Percent = {Base = percentBase, Fill = percentFill, Healing = percentHealing, Glow = percentGlow}
+
+	-- [[ 其他狀態 (離線、死亡) ]] --
 
 	-- 狀態圖示不裁切水位，排版寬度只用來定位旁邊文字，貼圖本身維持正方形。
 	health.Status = {}
