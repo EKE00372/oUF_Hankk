@@ -304,7 +304,7 @@ T.CreateClassPower = function(self)
 	for index = 1, count do
 		local bar = CreateResourceIcon(self, shape, size, nil, bodyProgress)
 		if index == 1 then
-			bar:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", -12, 4)
+			bar:SetPoint("TOPRIGHT", self, "BOTTOMRIGHT", -12, 8)
 		else
 			bar:SetPoint("RIGHT", element[index - 1], "LEFT", -gap, 0)
 		end

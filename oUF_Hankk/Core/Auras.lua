@@ -120,7 +120,7 @@ T.CreateTargetAuras = function(self)
 		initialAnchor = "TOPLEFT", growthX = "RIGHT", growthY = "DOWN",
 	})
 	-- 光環列與此單位的目標鏈文字保持對齊。
-	auras:SetPoint("TOPLEFT", self, "BOTTOMLEFT", C.Position.TOT[4], -5)
+	auras:SetPoint("TOPLEFT", self, "BOTTOMLEFT", C.Position.TOT[4], 0)
 	auras:SetFrameLevel(self:GetFrameLevel() + 4)
 	auras.PostCreateButton = PostCreateAuraButton
 
