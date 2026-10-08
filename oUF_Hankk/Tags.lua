@@ -6,10 +6,12 @@ local UnitIsTapDenied, UnitIsPlayer, UnitReaction = UnitIsTapDenied, UnitIsPlaye
 local UnitInPartyIsAI = UnitInPartyIsAI
 local UnitHealth, UnitHealthMax, UnitPower, UnitPowerMax = UnitHealth, UnitHealthMax, UnitPower, UnitPowerMax
 local UnitPowerPercent = UnitPowerPercent
+local UnitGetTotalAbsorbs = UnitGetTotalAbsorbs
 local UnitClassification, UnitEffectiveLevel = UnitClassification, UnitEffectiveLevel
 local GetContentDifficultyCreatureForPlayer = C_PlayerInfo.GetContentDifficultyCreatureForPlayer
 local GetDifficultyColor = GetDifficultyColor
 local format = string.format
+local FormatZero = F.FormatZero
 
 --===================================================--
 -- Threat colors / 仇恨顏色
@@ -65,6 +67,13 @@ oUF.Tags.Methods["hankk:health"] = function(unit)
 end
 oUF.Tags.Events["hankk:health"] = "UNIT_HEALTH UNIT_MAXHEALTH UNIT_CONNECTION"
 
+-- 吸收盾：縮寫數值；零值留空，顏色與加號由樣式的條件前後綴提供。
+oUF.Tags.Methods["hankk:absorbs"] = function(unit)
+	local amount = UnitGetTotalAbsorbs(unit)
+	return FormatZero(amount, F.NumberAbbrValue(amount))
+end
+oUF.Tags.Events["hankk:absorbs"] = "UNIT_ABSORB_AMOUNT_CHANGED"
+
 oUF.Tags.Methods["hankk:power"] = function(unit)
 	local current = F.NumberAbbrValue(UnitPower(unit))
 	
@@ -73,28 +82,25 @@ oUF.Tags.Methods["hankk:power"] = function(unit)
 end
 oUF.Tags.Events["hankk:power"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
--- 首領、競技場與隊伍法力共用同一條接近零的透明度曲線。
-local powerAlphaCurve = C_CurveUtil.CreateCurve()
-powerAlphaCurve:SetType(Enum.LuaCurveType.Step)
-powerAlphaCurve:AddPoint(0, 0)
-powerAlphaCurve:AddPoint(1e-10, 1)
-
+-- 首領、競技場與隊伍法力共用原生零值格式，連同分隔符一起留空。
 oUF.Tags.Methods["hankk:otherpower"] = function(unit)
-	_FRAME.PowerValue:SetAlpha(UnitPowerPercent(unit, nil, false, powerAlphaCurve))
-	return C_StringUtil.WrapString(F.NumberAbbrValue(UnitPower(unit)), nil, "|r ||")
+	local amount = UnitPower(unit)
+	local text = C_StringUtil.WrapString(F.NumberAbbrValue(amount), nil, "|r ||")
+	return FormatZero(amount, text)
 end
 oUF.Tags.Events["hankk:otherpower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
--- 治療隊友仍有法力但未滿 1% 時顯示 0；法力歸零時由共用曲線隱藏。
+-- 治療隊友仍有法力但未滿 1% 時顯示 0；以原始法力判斷零值留空。
 -- 啟用簡化數值顯示時，與隊友血量一樣省略百分號。
 local partyManaColor = oUF.colors.power.MANA:GenerateHexColorMarkup()
 oUF.Tags.Methods["hankk:partypower"] = function(unit)
 	local role = UnitGroupRolesAssigned(_FRAME.PartyUnit)
 	if role ~= "HEALER" then return "" end
 
-	_FRAME.PowerValue:SetAlpha(UnitPowerPercent(unit, Enum.PowerType.Mana, false, powerAlphaCurve))
+	local mana = UnitPower(unit, Enum.PowerType.Mana)
 	local percent = UnitPowerPercent(unit, Enum.PowerType.Mana, false, CurveConstants.ScaleTo100)
-	return format((F.GetHankkOption("CurrentValuesOnly") and "%s%d|r ||") or "%s%d%%|r ||", partyManaColor, percent)
+	local text = format((F.GetHankkOption("CurrentValuesOnly") and "%s%d|r ||") or "%s%d%%|r ||", partyManaColor, percent)
+	return FormatZero(mana, text)
 end
 oUF.Tags.Events["hankk:partypower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION GROUP_ROSTER_UPDATE PLAYER_ROLES_ASSIGNED ROLE_CHANGED_INFORM"
 oUF.Tags.SharedEvents.PLAYER_ROLES_ASSIGNED = true

@@ -96,6 +96,8 @@ local MediaFolder = G.MediaFolder
 		{name = "Elements", options = {
 			{key = "PlayerResources", default = true},
 			{key = "PlayerTotems", default = true},
+			{key = "Absorb", default = true, tooltip = "AbsorbTip"},
+			{key = "HealPrediction", default = true, tooltip = "HealPredictionTip"},
 			{key = "PartyThreatHighlight", default = true},
 			{key = "PlayerThreatHighlight", default = true, tooltip = "PlayerThreatHighlightTip"},
 			{key = "ShowTargetLevel", default = false, tooltip = "TargetLevelTip"},

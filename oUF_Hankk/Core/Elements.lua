@@ -417,11 +417,15 @@ local function UpdateSecondaryPowerText(element, current, maximum)
 	if not element.isActive then return end
 	-- addpower 靠右對齊，前面的空格讓左側狀態圖示與數值隔開。
 	local prefix = (element == element.__owner.AdditionalPower and " ") or ""
+	local text
 	if F.GetHankkOption("CurrentValuesOnly") then
-		element.Value:SetFormattedText(prefix.."%s", F.NumberAbbrValue(current))
+		text = string.format(prefix.."%s", F.NumberAbbrValue(current))
 	else
-		element.Value:SetFormattedText(prefix.."%s/%s", F.NumberAbbrValue(current), F.NumberAbbrValue(maximum))
+		text = string.format(prefix.."%s/%s", F.NumberAbbrValue(current), F.NumberAbbrValue(maximum))
 	end
+	-- 額外法力以最大值控制整段文字留空；目前法力為零仍顯示 0／上限。
+	if element == element.__owner.AdditionalPower then text = F.FormatZero(maximum, text) end
+	element.Value:SetFormattedText("%s", text)
 end
 
 local function ColorSecondaryPowerText(element, color)

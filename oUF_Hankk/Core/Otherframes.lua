@@ -22,6 +22,7 @@ local function SetHealthStatus(health, status)
 		health.Base:SetShown(not status)
 		health.Fill:SetShown(not status)
 		health.Glow:SetShown(not status)
+		if health.HealingAll then health.HealingAll.Fill:SetShown(not status) end
 
 		health.activeStatus = status
 	end
@@ -120,6 +121,7 @@ local function SetSpecIcon(health, specID, class)
 	health.specIcon = icon
 	
 	local base, fill, glow, owner = health.Base, health.Fill, health.Glow, health.LayoutOwner
+	local prediction = health.HealingAll
 	local size = health.IconSize
 	local inset = (icon and size * icon[5]) or 38 * size / 256
 	-- 只移動圖格來對齊可見左緣，定位點與文字都保持不動。
@@ -136,6 +138,11 @@ local function SetSpecIcon(health, specID, class)
 		fill:SetTexture((icon[2] == 1 and G.media.specfill1) or G.media.specfill2)
 		fill:SetTexCoord(unpack(icon[1]))
 		fill:SetVertexColor(1, 1, 1)
+		if prediction then
+			prediction:SetSize(size, size * icon[4])
+			prediction.Fill:SetTexture((icon[2] == 1 and G.media.specfill1) or G.media.specfill2)
+			prediction.Fill:SetTexCoord(unpack(icon[1]))
+		end
 
 		glow:SetTexture((icon[2] == 1 and G.media.specglow1) or G.media.specglow2)
 		glow:SetTexCoord(unpack(icon[1]))
@@ -150,6 +157,11 @@ local function SetSpecIcon(health, specID, class)
 		fill:SetTexture(G.media.digitfill)
 		fill:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
 		fill:SetVertexColor(unpack(C.HealthColor))
+		if prediction then
+			prediction:SetSize(size, size * 166 / 256)
+			prediction.Fill:SetTexture(G.media.digitfill)
+			prediction.Fill:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
+		end
 
 		glow:SetTexture(G.media.digitglow)
 		glow:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
@@ -559,6 +571,36 @@ local function CreatePartyStyle(self, unit)
 	end)
 	local health = self.Health
 
+	-- 隊伍治療預估：從當前血量水位開始，只在當前血量上方顯示，滿血時不顯示。
+	if F.GetHankkOption("HealPrediction") then
+		local size = health.IconSize
+		local prediction = CreateFrame("StatusBar", nil, health, "DisableUntrustedLayoutScriptsTemplate")
+		prediction:SetSize(size, 166 * size / 256)
+		prediction:SetPoint("BOTTOMLEFT", health:GetStatusBarTexture(), "TOPLEFT", 0, 0)
+		prediction:SetOrientation("VERTICAL")
+		prediction:SetReverseFill(false)
+		prediction:SetStatusBarTexture(G.media.blank)
+		prediction:SetStatusBarColor(1, 1, 1, 0)
+		prediction:SetMinMaxValues(0, 1)
+		prediction:SetValue(0)
+
+		local predictionClip = CreateFrame("Frame", nil, prediction, "DisableUntrustedLayoutScriptsTemplate")
+		predictionClip:SetAllPoints(prediction:GetStatusBarTexture())
+		predictionClip:SetClipsChildren(true)
+		prediction.Clip = predictionClip
+
+		local predictionFill = predictionClip:CreateTexture(nil, "ARTWORK")
+		predictionFill:SetAllPoints(health.Base)
+		predictionFill:SetTexture(G.media.digitfill)
+		predictionFill:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
+		predictionFill:SetDesaturated(true)
+		predictionFill:SetVertexColor(unpack(C.IncomingHealColor))
+		prediction.Fill = predictionFill
+		health.HealingAll = prediction
+		health.incomingHealClampMode = Enum.UnitIncomingHealClampMode.MissingHealth
+		health.incomingHealOverflow = 1
+	end
+
 	-- 沿用死亡／靈魂切換，僅為隊友補上固定大小、不受水位裁切的離線圖示。
 	local offline = health:CreateTexture(nil, "ARTWORK")
 	offline:SetSize(health.IconSize, health.IconSize)
@@ -577,6 +619,10 @@ local function CreatePartyStyle(self, unit)
 	offline.Glow = offlineGlow
 	health.Status.offline = offline
 	T.CreatePartyAuras(self)
+	if F.GetHankkOption("Absorb") then
+		self:Tag(self.Value, ((F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%") ..
+			"[|cffffff00+$>hankk:absorbs<$|r]")
+	end
 	self:Tag(self.PowerValue, "[hankk:partypower]")
 
 	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。

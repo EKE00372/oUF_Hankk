@@ -6,6 +6,7 @@ local THEME_R, THEME_G, THEME_B = unpack(C.HealthColor)
 local PANEL_ALPHA, BUTTON_ALPHA = .82, .35
 local COLUMN_WIDTH, COLUMN_GAP = 224, 20
 local ROW_HEIGHT = 28
+local FOOTER_HEIGHT = 58
 
 local function CreateText(parent, text, size, justify)
 	local label = F.CreateText(parent, size or 14, justify or "LEFT")
@@ -128,7 +129,7 @@ local function BuildGUI()
 	MainFrame = CreateFrame("Frame", "oUF_HankkGUI", UIParent, "BackdropTemplate")
 	table.insert(UISpecialFrames, MainFrame:GetName())
 	MainFrame:SetFrameStrata("DIALOG")
-	MainFrame:SetSize(520, 420)
+	MainFrame:SetWidth(520)
 	MainFrame:SetPoint("CENTER")
 	MainFrame:SetMovable(true)
 	MainFrame:EnableMouse(true)
@@ -166,6 +167,9 @@ local function BuildGUI()
 		if column == 1 then y = y - ROW_HEIGHT end
 		y = y - 10
 	end
+
+	-- 底部區域跟隨實際顯示的選項列，每增加一列便增加一行高度。
+	MainFrame:SetSize(520, FOOTER_HEIGHT - y)
 
 	MainFrame.StatusText = CreateText(MainFrame, "", 12, "LEFT")
 	MainFrame.StatusText:SetTextColor(THEME_R, THEME_G, THEME_B)

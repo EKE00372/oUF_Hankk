@@ -126,10 +126,12 @@ local function PostUpdateHealth(health, unit)
 		for _, digit in ipairs(health.Digits) do
 			digit.Base:SetShown(not status)
 			digit.Fill:SetShown(not status)
+			if digit.Healing then digit.Healing:SetShown(not status) end
 			digit.Glow:SetShown(not status)
 		end
 		health.Percent.Base:SetShown(not status)
 		health.Percent.Fill:SetShown(not status)
+		if health.Percent.Healing then health.Percent.Healing:SetShown(not status) end
 		health.Percent.Glow:SetShown(not status)
 
 		health.activeStatus = status
@@ -144,6 +146,7 @@ local function PostUpdateHealth(health, unit)
 		local digitWidth = health.values:EvaluateCurrentHealthPercent(health.WidthCurves[slot])
 		digit.Base:SetTexCoord(crop:GetRGBA())
 		digit.Fill:SetTexCoord(crop:GetRGBA())
+		if digit.Healing then digit.Healing:SetTexCoord(crop:GetRGBA()) end
 		digit.Glow:SetSpriteSheetCell(cell, 4, 4)
 
 		-- 狀態圖示占用一格的寬度，其餘兩格收為零，旁邊文字便會跟著收近。
@@ -180,6 +183,29 @@ local function CreateHealthDigits(self)
 	clip:SetPoint("TOPLEFT", health:GetStatusBarTexture(), "TOPLEFT", (not isPlayer and -size) or 0, 0)
 	clip:SetPoint("BOTTOMRIGHT", health:GetStatusBarTexture(), "BOTTOMRIGHT", (isPlayer and size) or 0, 0)
 	clip:SetClipsChildren(true)
+
+	-- 治療預估：從當前血量水位開始，只在當前血量上方顯示，滿血時不顯示。
+	local healingClip
+	if F.GetHankkOption("HealPrediction") then
+		local healing = CreateFrame("StatusBar", nil, health, "DisableUntrustedLayoutScriptsTemplate")
+		healing:SetSize(width, waterHeight)
+		healing:SetPoint("BOTTOMLEFT", health:GetStatusBarTexture(), "TOPLEFT", 0, 0)
+		healing:SetOrientation("VERTICAL")
+		healing:SetReverseFill(false)
+		healing:SetStatusBarTexture(G.media.blank)
+		healing:SetStatusBarColor(1, 1, 1, 0)
+		healing:SetMinMaxValues(0, 1)
+		healing:SetValue(0)
+
+		healingClip = CreateFrame("Frame", nil, healing, "DisableUntrustedLayoutScriptsTemplate")
+		healingClip:SetPoint("TOPLEFT", healing:GetStatusBarTexture(), "TOPLEFT", (not isPlayer and -size) or 0, 0)
+		healingClip:SetPoint("BOTTOMRIGHT", healing:GetStatusBarTexture(), "BOTTOMRIGHT", (isPlayer and size) or 0, 0)
+		healingClip:SetClipsChildren(true)
+		healing.Clip = healingClip
+		health.HealingAll = healing
+		health.incomingHealClampMode = Enum.UnitIncomingHealClampMode.MissingHealth
+		health.incomingHealOverflow = 1
+	end
 
 	health.Digits = {}
 	health.DigitCurves = digitCurves[align]
@@ -218,7 +244,16 @@ local function CreateHealthDigits(self)
 		fill:SetTexCoord(blankDigit.texCoords:GetRGBA())
 		fill:SetVertexColor(unpack(C.HealthColor))
 
-		health.Digits[slot] = {Base = base, Fill = fill, Glow = glow, Width = digitWidth}
+		local healingFill
+		if healingClip then
+			healingFill = healingClip:CreateTexture(nil, "ARTWORK")
+			healingFill:SetAllPoints(digitWidth:GetStatusBarTexture())
+			healingFill:SetTexture(G.media.digitfill)
+			healingFill:SetTexCoord(blankDigit.texCoords:GetRGBA())
+			healingFill:SetVertexColor(unpack(C.IncomingHealColor))
+		end
+
+		health.Digits[slot] = {Base = base, Fill = fill, Healing = healingFill, Glow = glow, Width = digitWidth}
 	end
 	-- 玩家從右端往左接，目標／焦點從左端往右接；空格字寬為零，不留占位。
 	for slot = 1, 3 do
@@ -259,6 +294,15 @@ local function CreateHealthDigits(self)
 	percentFill:SetSpriteSheetCell(G.HealthIconCells.percent, 4, 4)
 	percentFill:SetVertexColor(unpack(C.HealthColor))
 
+	local percentHealing
+	if healingClip then
+		percentHealing = healingClip:CreateTexture(nil, "ARTWORK")
+		percentHealing:SetAllPoints(percentBase)
+		percentHealing:SetTexture(G.media.digitfill)
+		percentHealing:SetSpriteSheetCell(G.HealthIconCells.percent, 4, 4)
+		percentHealing:SetVertexColor(unpack(C.IncomingHealColor))
+	end
+
 	local percentGlow = health:CreateTexture(nil, "BACKGROUND", nil, -1)
 	percentGlow:SetAllPoints(percentBase)
 	percentGlow:SetTexture(G.media.digitglow)
@@ -266,7 +310,7 @@ local function CreateHealthDigits(self)
 	percentGlow:SetVertexColor(0, 0, 0)
 	percentGlow:SetBlendMode("BLEND")
 
-	health.Percent = {Base = percentBase, Fill = percentFill, Glow = percentGlow}
+	health.Percent = {Base = percentBase, Fill = percentFill, Healing = percentHealing, Glow = percentGlow}
 
 	-- 狀態圖示不裁切水位，排版寬度只用來定位旁邊文字，貼圖本身維持正方形。
 	health.Status = {}
@@ -400,7 +444,8 @@ local function CreatePlayerStyle(self)
 
 	CreateMainShared(self)
 	-- 隱藏具體血量時，也移除分隔線；大百分比與水位不受影響。
-	self:Tag(self.Value, "[powercolor][hankk:power]|r" .. ((F.GetHankkOption("HidePlayerHealth") and "") or " || [hankk:health]"))
+	self:Tag(self.Value, "[powercolor][hankk:power]|r" .. ((F.GetHankkOption("HidePlayerHealth") and "") or " || [hankk:health]")
+		.. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or ""))
 	self.fade = F.GetHankkOption("Fade")
 
 	if F.GetHankkOption("PlayerThreatHighlight") then T.CreatePlayerThreatIndicator(self) end
@@ -423,7 +468,8 @@ local function CreateTargetStyle(self)
 
 	CreateMainShared(self)
 	self:Tag(self.Value, "[hankk:altpower]"..((F.GetHankkOption("ShowTargetLevel") and "[hankk:level]") or "")
-		.."[hankk:health] || [powercolor][hankk:power]|r")
+		.."[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
+		.." || [powercolor][hankk:power]|r")
 
 	T.CreateTargetAlternativePower(self)
 	T.CreateTargetStatusIndicators(self)
@@ -444,7 +490,8 @@ local function CreateFocusStyle(self)
 	self.mystyle = "focus"
 
 	CreateMainShared(self)
-	self:Tag(self.Value, "[hankk:health] || [powercolor][hankk:power]|r")
+	self:Tag(self.Value, "[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
+		.." || [powercolor][hankk:power]|r")
 
 	T.CreateTargetStatusIndicators(self)
 	T.CreateMainCastbar(self)

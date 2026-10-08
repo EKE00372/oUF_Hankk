@@ -2,6 +2,10 @@ local _, ns = ...
 local F, G = ns[2], ns[3]
 
 local CreateAbbreviateConfig, AbbreviateNumbers = CreateAbbreviateConfig, AbbreviateNumbers
+local format = string.format
+local WrapString = C_StringUtil.WrapString
+local TruncateWhenZero = C_StringUtil.TruncateWhenZero
+local StripHyperlinks = C_StringUtil.StripHyperlinks
 
 --===================================================--
 -- Number format / 數值格式
@@ -18,6 +22,15 @@ local NumberAbbrConfig = {
 
 F.NumberAbbrValue = function(value)
 	return AbbreviateNumbers(value, NumberAbbrConfig)
+end
+
+-- 零值留空判斷：原始值1但百分比0%，不留空
+F.FormatZero = function(amount, text)	-- 原始數值，縮寫或百分比格式
+	local label = format("|h%s|h", text)	-- 取得文字，例如 |h0%|h
+	local link = WrapString(TruncateWhenZero(amount), "|Hitem:", label)	-- 判斷留空，|Hitem:1|h0%|h
+
+	-- text: 要處理的字串, maintainColor: 色碼|c與|r, maintainBrackets: 方括號[], stripNewlines: 換行標記|n, maintainAtlases: atlas材質|A|a, maintainTextures: 材質|T|t)
+	return StripHyperlinks(link, true, false, false, false, true)
 end
 
 --===================================================--

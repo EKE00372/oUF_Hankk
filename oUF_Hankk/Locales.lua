@@ -34,6 +34,10 @@ if locale == "zhTW" then
 	L.PlayerThreatHighlightTip = "只在組隊時顯示。"
 	L.DesaturateOtherDebuffs = "目標減益區分"
 	L.DesaturateOtherDebuffsTip = "將他人施放的減益光環顯示為灰色。"
+	L.Absorb = "吸收盾"
+	L.AbsorbTip = "以數值顯示於血量旁。"
+	L.HealPrediction = "預估治療"
+	L.HealPredictionTip = "以淡綠色顯示於血量百分比內。"
 	L.ShowFirstNameOnly = "只顯示名字"
 
 	L.Reload = "套用設定"
@@ -79,6 +83,10 @@ elseif locale == "zhCN" then
 	L.PlayerThreatHighlightTip = "只在组队时显示。"
 	L.DesaturateOtherDebuffs = "目标减益区分"
 	L.DesaturateOtherDebuffsTip = "将他人施放的减益光环显示为灰色。"
+	L.Absorb = "吸收盾"
+	L.AbsorbTip = "以数值显示于血量旁。"
+	L.HealPrediction = "预估治疗"
+	L.HealPredictionTip = "以淡绿色显示于血量百分比内。"
 	L.ShowFirstNameOnly = "只显示名字"
 
 	L.Reload = "应用设置"
@@ -123,6 +131,10 @@ else
 	L.PlayerThreatHighlightTip = "Only shown while in a group."
 	L.DesaturateOtherDebuffs = "Desaturated target debuffs"
 	L.DesaturateOtherDebuffsTip = "Make debuff auras cast by others in grayscale."
+	L.Absorb = "Absorb shield"
+	L.AbsorbTip = "Display as a value beside health."
+	L.HealPrediction = "Incoming healing"
+	L.HealPredictionTip = "Display in light green within the health percentage."
 	L.ShowFirstNameOnly = "Show first name only"
 
 	L.Reload = "Apply settings"

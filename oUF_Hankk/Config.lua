@@ -51,6 +51,7 @@ local MediaFolder = G.MediaFolder
 	-- Colors / 顏色
 
 	C.HealthColor = {1, 0.65, 0.16}		-- Main health percent digits / 主體血量百分比顏色
+	C.IncomingHealColor = {0.56, 0.65, 0.56}	-- Predicted health fill / 預估治療填色
 	C.SubHealthColor = {1, 0.65, 0.16}	-- Pet and ToT/ToTT/FoT/FoTT / 寵物/目標的目標鏈/焦點的目標鏈
 	C.TextColor = {1, 1, 1}				-- Base text color / 文字底色
 	
