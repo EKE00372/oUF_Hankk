@@ -4,6 +4,10 @@ local C, F, G, T = unpack(ns)
 
 -- 數字與文字的水平間距，名字和數值行之間的垂直間距。
 local textGap, textLineGap = 3, -2
+-- 焦點倍率：小型焦點使用 0.7 倍，目標鏈文字使用 0.875 倍。
+local smallFocusScale = .7
+local smallFocusChainScale = (smallFocusScale * 1.25)
+local focusScale, focusChainScale
 
 --===================================================--
 -- Atlas regions / 圖集裁切範圍
@@ -354,11 +358,6 @@ end
 -- Shared builders / 共用建立函式
 --===================================================--
 
--- 焦點倍率：小型焦點使用 0.7 倍，目標鏈文字使用 0.875 倍。
-local smallFocusScale = .7
-local smallFocusChainScale = (smallFocusScale * 1.25)
-local focusScale, focusChainScale
-
 local function CreateMainShared(self)
 	local isPlayer = self.mystyle == "player"
 	local align = (isPlayer and "RIGHT") or "LEFT"
@@ -386,37 +385,41 @@ local function CreateMainShared(self)
 	value:SetTextColor(unpack(C.TextColor))
 	self.Value = value
 
-	-- 目標和焦點在數值行上方顯示名字。
-	if not isPlayer then
-		local name = F.CreateText(info, G.NameFS, align)
-		name:SetSize(0, G.NameFS + 4)
-		name:SetPoint("BOTTOM"..align, info, "BOTTOM"..align, 0, G.ValueFS + 4 + textLineGap)
-		name:SetTextColor(unpack(C.TextColor))
-		self.Name = name
-		self:Tag(name, "[hankk:namecolor]"..G.NameTag.."|r")
-	end
-
 	-- 目標和焦點標記放在名字前面；玩家標記由狀態圖示列安排位置。
 	local marker = health:CreateTexture(nil, "OVERLAY")
 	marker:SetSize(C.RaidIconSize, C.RaidIconSize)
 	marker:SetTexture(G.media.raidicon)
 	marker:Hide()
 	self.RaidTargetIndicator = marker
-	if not isPlayer then
-		marker:SetPoint("LEFT", info, "BOTTOMLEFT", 0, G.ValueFS + 4 + textLineGap + (G.NameFS + 4) / 2)
+end
 
-		local hasMarker = false
-		local function UpdateNameSpacing(shown)
-			if hasMarker == shown then return end
-			hasMarker = shown
-			self.Name:SetPoint("BOTTOMLEFT", info, "BOTTOMLEFT",
-				(shown and C.RaidIconSize + textGap) or 0, G.ValueFS + 4 + textLineGap)
-		end
+-- 目標和焦點的名字與名字前標記。
+local function CreateTargetInfo(self)
+	local info = self.Info
 
-		-- 跟隨 oUF 的顯隱呼叫，標記隱藏或停用時收回名字前的空間。
-		hooksecurefunc(marker, "Show", function() UpdateNameSpacing(true) end)
-		hooksecurefunc(marker, "Hide", function() UpdateNameSpacing(false) end)
+	-- 名字
+	local name = F.CreateText(info, G.NameFS, "LEFT")
+	name:SetSize(0, G.NameFS + 4)
+	name:SetPoint("BOTTOMLEFT", info, "BOTTOMLEFT", 0, G.ValueFS + 4 + textLineGap)
+	name:SetTextColor(unpack(C.TextColor))
+	self.Name = name
+	self:Tag(name, "[hankk:namecolor][hankk:name]|r")
+
+	-- 團隊標記
+	local marker = self.RaidTargetIndicator
+	marker:SetPoint("LEFT", info, "BOTTOMLEFT", 0, G.ValueFS + 4 + textLineGap + (G.NameFS + 4) / 2)
+
+	local hasMarker = false
+	local function UpdateNameSpacing(shown)
+		if hasMarker == shown then return end
+		hasMarker = shown
+		self.Name:SetPoint("BOTTOMLEFT", info, "BOTTOMLEFT",
+			(shown and C.RaidIconSize + textGap) or 0, G.ValueFS + 4 + textLineGap)
 	end
+
+	-- 跟隨 oUF 的顯隱呼叫，標記隱藏或停用時收回名字前的空間。
+	hooksecurefunc(marker, "Show", function() UpdateNameSpacing(true) end)
+	hooksecurefunc(marker, "Hide", function() UpdateNameSpacing(false) end)
 end
 
 local function CreateSubShared(self, arrowText)
@@ -478,6 +481,7 @@ local function CreateTargetStyle(self)
 	self.mystyle = "target"
 
 	CreateMainShared(self)
+	CreateTargetInfo(self)
 
 	-- Tags
 	self:Tag(self.Value, "[hankk:altpower]"..((F.GetHankkOption("TargetLevel") and "[hankk:level]") or "")
@@ -487,6 +491,7 @@ local function CreateTargetStyle(self)
 	-- Elements
 	T.CreateTargetAlternativePower(self)
 	T.CreateTargetStatusIndicators(self)
+	T.CreateTargetAuras(self)
 	-- Castbar
 	T.CreateMainCastbar(self)
 
@@ -497,14 +502,13 @@ local function CreateTargetStyle(self)
 	local nameY = (G.CastbarFS + 4) * .75
 	castbar.Text:SetPoint("LEFT", castbar, "LEFT", 3, nameY)
 	castbar.Text:SetPoint("RIGHT", castbar, "RIGHT", -3, nameY)
-
-	T.CreateTargetAuras(self)
 end
 
 local function CreateFocusStyle(self)
 	self.mystyle = "focus"
 
 	CreateMainShared(self)
+	CreateTargetInfo(self)
 
 	-- Tags
 	self:Tag(self.Value, "[hankk:health]" .. ((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or "")
@@ -512,6 +516,7 @@ local function CreateFocusStyle(self)
 
 	-- Elements
 	T.CreateTargetStatusIndicators(self)
+	T.CreateFocusAuras(self, C.Position.FOT[4] * focusChainScale / focusScale)
 	-- Castbar
 	T.CreateMainCastbar(self)
 
@@ -521,8 +526,6 @@ local function CreateFocusStyle(self)
 	castbar.IconBG:SetPoint("LEFT", castbar, "RIGHT", 1, 0)
 	castbar.Text:SetPoint("LEFT", castbar, "LEFT", 3, 0)	-- 焦點施法條沒有施法時間，法術名垂直置中。
 	castbar.Text:SetPoint("RIGHT", castbar, "RIGHT", -3, 0)
-
-	T.CreateFocusAuras(self, C.Position.FOT[4] * focusChainScale / focusScale)
 end
 
 local function CreatePetStyle(self)
@@ -532,7 +535,7 @@ local function CreatePetStyle(self)
 	CreateSubShared(self)
 
 	-- Tags
-	local tag = "[perhp]%@[hankk:namecolor]"..G.NameTag.."|r"
+	local tag = "[perhp]%@[hankk:namecolor][hankk:name]|r"
 	if G.IsForever and UnitClassBase("player") == "HUNTER" then
 		tag = "[hankk:pethappiness]" .. tag
 	end
@@ -545,7 +548,7 @@ local function CreateToTStyle(self)
 	CreateSubShared(self, "›")
 
 	-- Tags
-	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
+	self:Tag(self.Name, "[hankk:namecolor][hankk:name]|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
 
@@ -555,7 +558,7 @@ local function CreateToTTStyle(self)
 	CreateSubShared(self, "»")
 
 	-- Tags
-	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
+	self:Tag(self.Name, "[hankk:namecolor][hankk:name]|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
 
@@ -565,7 +568,7 @@ local function CreateFoTStyle(self)
 	CreateSubShared(self, "›")
 
 	-- Tags
-	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
+	self:Tag(self.Name, "[hankk:namecolor][hankk:name]|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
 
@@ -575,7 +578,7 @@ local function CreateFoTTStyle(self)
 	CreateSubShared(self, "»")
 
 	-- Tags
-	self:Tag(self.Name, "[hankk:namecolor]"..G.NameTag.."|r @[perhp]"
+	self:Tag(self.Name, "[hankk:namecolor][hankk:name]|r @[perhp]"
 		..((F.GetHankkOption("CurrentValuesOnly") and "") or "%"))
 end
 

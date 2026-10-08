@@ -347,20 +347,6 @@ T.CreatePlayerThreatIndicator = function(self)
 	self.ThreatIndicator = indicator
 end
 
--- 入隊或離隊時即時刷新
-local function UpdatePlayerThreatGroup(self)
-	if self:IsElementEnabled("ThreatIndicator") then self.ThreatIndicator:ForceUpdate() end
-end
-local function EnablePlayerThreatGroup(self)
-	if self.mystyle ~= "player" or not self.ThreatIndicator then return end
-	self:RegisterEvent("GROUP_ROSTER_UPDATE", UpdatePlayerThreatGroup, true)
-	return true
-end
-local function DisablePlayerThreatGroup(self)
-	self:UnregisterEvent("GROUP_ROSTER_UPDATE", UpdatePlayerThreatGroup)
-end
-oUF:AddElement("HankkPlayerThreatGroup", nil, EnablePlayerThreatGroup, DisablePlayerThreatGroup)
-
 --===================================================--
 -- Indicators / 狀態圖示
 --===================================================--

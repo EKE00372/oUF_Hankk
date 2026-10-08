@@ -92,19 +92,16 @@ end
 oUF.Tags.Events["hankk:otherpower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
 -- 治療隊友法力：百分比
-local partyManaColor = oUF.colors.power.MANA:GenerateHexColorMarkup()
 oUF.Tags.Methods["hankk:partypower"] = function(unit)
-	local role = UnitGroupRolesAssigned(_FRAME.PartyUnit)
-	if role ~= "HEALER" then return "" end
+	if not _FRAME.PowerValue.enabled then return "" end
 
 	local mana = UnitPower(unit, Enum.PowerType.Mana)
 	local percent = UnitPowerPercent(unit, Enum.PowerType.Mana, false, CurveConstants.ScaleTo100)
-	local text = format((F.GetHankkOption("CurrentValuesOnly") and "%s%d|r ||") or "%s%d%%|r ||", partyManaColor, percent)
-	return FormatZero(mana, text)
+	local text = format((F.GetHankkOption("CurrentValuesOnly") and "%d") or "%d%%", percent)
+
+	return FormatZero(mana, oUF.colors.power.MANA:WrapTextInColorCode(text))
 end
-oUF.Tags.Events["hankk:partypower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION GROUP_ROSTER_UPDATE PLAYER_ROLES_ASSIGNED ROLE_CHANGED_INFORM"
-oUF.Tags.SharedEvents.PLAYER_ROLES_ASSIGNED = true
-oUF.Tags.SharedEvents.ROLE_CHANGED_INFORM = true
+oUF.Tags.Events["hankk:partypower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DISPLAYPOWER UNIT_CONNECTION"
 
 --===================================================--
 -- Target level / 目標等級
@@ -150,20 +147,14 @@ oUF.Tags.Methods["hankk:namecolor"] = function(unit)
 end
 oUF.Tags.Events["hankk:namecolor"] = "UNIT_NAME_UPDATE UNIT_FACTION"
 
--- FOREVER 會分別提供名字與姓氏。未啟用選項時維持全名；
--- 其他版本繼續使用 oUF 原有的名字標籤。
-G.NameTag = "[name]"
-if G.IsForever then
-	G.NameTag = "[hankk:forevername]"
-	oUF.Tags.Methods["hankk:forevername"] = function(unit, realUnit)
-		local displayedUnit = realUnit or unit
-		if F.GetHankkOption("FirstNameOnly") then
-			return UnitNameUnmodified(displayedUnit)
-		end
-		return NameUtil.GetUnmodifiedUnitFullName(displayedUnit)
+-- 名字
+oUF.Tags.Methods["hankk:name"] = function(unit, realUnit)
+	if G.IsForever and F.GetHankkOption("FirstNameOnly") then
+		return UnitNameUnmodified(realUnit or unit)
 	end
-	oUF.Tags.Events["hankk:forevername"] = "UNIT_NAME_UPDATE"
+	return oUF.Tags.Methods.name(unit, realUnit)
 end
+oUF.Tags.Events["hankk:name"] = oUF.Tags.Events.name
 
 -- FOREVER 獵人寵物心情值
 local petHappinessFaces = {":<", ":||", ":D"}

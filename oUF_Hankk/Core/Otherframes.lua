@@ -259,7 +259,6 @@ local function CreateOtherStyle(self, size)
 	value:SetPoint("BOTTOMRIGHT", info, "BOTTOMRIGHT", 0, -textHeight - textLineGap)
 	value:SetTextColor(unpack(C.SubHealthColor))
 	self.Value = value
-	self:Tag(value, (F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%")
 
 	local power = F.CreateText(self, G.OtherFS, "RIGHT")
 	power:SetSize(0, textHeight)
@@ -271,15 +270,7 @@ local function CreateOtherStyle(self, size)
 	name:SetPoint("BOTTOMRIGHT", info, "BOTTOMRIGHT", 0, 0)
 	name:SetTextColor(unpack(C.TextColor))
 	self.Name = name
-	self:Tag(name, "[hankk:namecolor]"..G.NameTag.."|r")
-
-	-- Castbar
-	if self.mystyle ~= "party" then
-		info:SetFrameLevel(self:GetFrameLevel() + 4)
-		-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
-		T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, info)
-		self.Castbar:SetPoint("LEFT", info, "LEFT", 1, 0)
-	end
+	self:Tag(name, "[hankk:namecolor][hankk:name]|r")
 
 	-- Elements
 
@@ -304,10 +295,17 @@ local function CreateBossStyle(self)
 	CreateOtherStyle(self, C.BossSize)
 
 	-- Tags
+	self:Tag(self.Value, (F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%")
 	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
 
 	-- Elements
 	T.CreateBossAuras(self)
+
+	-- Castbar
+	self.Info:SetFrameLevel(self:GetFrameLevel() + 4)
+	-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
+	T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, self.Info)
+	self.Castbar:SetPoint("LEFT", self.Info, "LEFT", 1, 0)
 end
 
 local function PostUpdateArenaColor(health, _, color)
@@ -344,6 +342,7 @@ local function CreateArenaStyle(self, unit)
 	CreateOtherStyle(self, C.BossSize)
 
 	-- Tags
+	self:Tag(self.Value, (F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%")
 	self:Tag(self.PowerValue, "[powercolor][hankk:otherpower]")
 
 	-- Elements
@@ -354,6 +353,12 @@ local function CreateArenaStyle(self, unit)
 	health.PostUpdateColor = PostUpdateArenaColor
 	health.UpdateColorArenaPreparation = UpdateArenaPreparationColor
 	health.PostUpdateArenaPreparation = PostUpdateArenaPreparation
+
+	-- Castbar
+	self.Info:SetFrameLevel(self:GetFrameLevel() + 4)
+	-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
+	T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, self.Info)
+	self.Castbar:SetPoint("LEFT", self.Info, "LEFT", 1, 0)
 end
 
 --===================================================--
@@ -629,11 +634,25 @@ local function CreatePartyStyle(self, unit)
 	T.CreatePartyAuras(self)
 
 	-- Tags
-	if F.GetHankkOption("Absorb") then
-		self:Tag(self.Value, ((F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%") ..
-			"[|cffffff00+$>hankk:absorbs<$|r]")
+	self:Tag(self.Value, ((F.GetHankkOption("CurrentValuesOnly") and "[perhp]") or "[perhp]%") ..
+		((F.GetHankkOption("Absorb") and "[|cffffff00+$>hankk:absorbs<$|r]") or ""))
+	self.PowerValue:Hide()
+	self:Tag(self.PowerValue, "[hankk:partypower<$ ||]")
+
+	-- 職責改變時才切換法力文字；整框刷新亦先同步固定隊友的職責。
+	local function UpdatePartyPower(self, event)
+		local power = self.PowerValue
+		local shown = UnitGroupRolesAssigned(self.PartyUnit) == "HEALER"
+		power.enabled = shown
+		power:SetShown(shown)
+		if not shown then power:SetText("")
+		elseif event then power:UpdateTag() end
 	end
-	self:Tag(self.PowerValue, "[hankk:partypower]")
+	self:RegisterEvent("GROUP_ROSTER_UPDATE", UpdatePartyPower, true)
+	self:RegisterEvent("PLAYER_ROLES_ASSIGNED", UpdatePartyPower, true)
+	self:RegisterEvent("ROLE_CHANGED_INFORM", UpdatePartyPower, true)
+	self.PreUpdate = function(self) UpdatePartyPower(self) end
+	UpdatePartyPower(self, "Init")
 
 	-- Elements
 	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。

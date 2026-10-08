@@ -82,7 +82,7 @@ local MediaFolder = G.MediaFolder
 			{key = "SmallFocus", default = true, tooltip = "SmallFocusDesc"},
 			{key = "ClassColorDigits", default = false, tooltip = "ClassColorDigitsTip"},
 			{key = "CurrentValuesOnly", default = false, tooltip = "CurrentValuesOnlyTip"},
-			{key = "HidePlayerHealth", default = false, tooltip = "HidePlayerHealthTip"},
+			{key = "HidePlayerHealth", default = false},
 		}},
 		{name = "Frames", options = {
 			{key = "Arena", default = false, foreverOnly = false},
