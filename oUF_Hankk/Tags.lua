@@ -109,7 +109,7 @@ oUF.Tags.Events["hankk:partypower"] = "UNIT_POWER_FREQUENT UNIT_MAXPOWER UNIT_DI
 --===================================================--
 
 do
-	local size = C.StatusSize	-- 整格顯示尺寸，包含透明留邊與柔光。
+	local size = C.StatusSize - 2	-- 整格顯示尺寸，包含透明留邊與柔光。
 	local markup = "|T" .. G.media.statusicons .. ":%d:%d:0:0:1024:128:"
 	G.Icons = {
 		Resting = format(markup .. "128:256:0:128:119:191:255|t", size, size),
@@ -121,7 +121,7 @@ end
 
 -- 四種狀態圖示使用完整圖格，依文字自然寬度收距。
 oUF.Tags.Methods["hankk:playericons"] = function(unit)
-	-- Boolean交EO31原生轉成 0/1，再以零值格式化控制圖示顯示。
+	-- 由 BoolValue 轉換成 0/1，控制圖示顯隱。
 	local resting = FormatZero(BoolValue(IsResting(), 1, 0), G.Icons.Resting)
 	local combat = FormatZero(BoolValue(UnitAffectingCombat(unit), 1, 0), G.Icons.Combat)
 	local assistant = FormatZero(BoolValue(UnitIsGroupAssistant(unit), 1, 0), G.Icons.Assistant)

@@ -6,11 +6,17 @@ local C, F, G, T = unpack(ns)
 -- Shared layout / 共用外觀
 --===================================================--
 
-local textGap, textLineGap = 2, G.OtherTextLineGap	-- 文字資訊區水平間距，垂直間距
+local textGap, textLineGap = 2, 2	-- 文字資訊區的水平間距，垂直間距
 local iconGap = 4					-- 血量圖示與文字資訊區水平間距
 local textHeight = G.OtherFS		-- 文字資訊區數值字高
 local nameHeight = (G.OtherFS - 4)	-- 文字資訊區名字字高
 local statusTextInset = {death = 65, offline = 85}
+
+-- 現行圖集的血量水位範圍是從圖格頂部往下的 y=44～210，根距比例換算底部位置與高度。
+-- 圖格的排版邊界是 38, 36, 218, 218，所以包含柔光的排版左緣為 x=38px
+-- 後續也以此為係數， 38 x 圖格相對原尺寸的倍率 (size/256) = X 座標偏移量
+local waterBottom = (256 - 210) / 256
+local waterHeight = (210 - 44) / 256
 
 -- 設定狀態圖示
 local function SetHealthStatus(health, status)
@@ -28,9 +34,9 @@ local function SetHealthStatus(health, status)
 	end
 end
 
--- 更新狀態圖；只有隊友框提供離線圖示，死亡與放魂共用十字架。
+-- 更新狀態圖示：離線優先，死亡與放魂共用十字架。
 local function PostUpdateHealth(health, unit)
-	SetHealthStatus(health, (health.Status.offline and not UnitIsConnected(unit) and health.Status.offline)
+	SetHealthStatus(health, (not UnitIsConnected(unit) and health.Status.offline)
 		or (UnitIsDeadOrGhost(unit) and health.Status.death))
 end
 
@@ -39,7 +45,6 @@ end
 --===================================================--
 
 -- {每筆資料記錄 256px 圖格的 UV}、圖集頁數、水位範圍與可見左緣
--- 底圖、填色和柔光共用完整圖格，按圖案可見左緣對齊。
 local specIcons = {
 	-- Druid / 德魯伊
 	[102] = {{0, 0.125, 0, 0.25}, 1, 0.1953125, 0.61328125, 0.1953125},		-- 平衡
@@ -119,19 +124,19 @@ local function SetSpecIcon(health, specID, class)
 	if health.specIcon == icon then return end
 	health.specIcon = icon
 	
-	local base, fill, glow, owner = health.Base, health.Fill, health.Glow, health.LayoutOwner
+	local owner = health.Owner
+	local base, fill, glow, owner = health.Base, health.Fill, health.Glow, health.Owner
 	local prediction = health.HealingAll
-	local size = health.IconSize
-	local inset = (icon and size * icon[5]) or 38 * size / 256
+	local size, scale = health.IconSize, health.IconSize / 256
+	local inset = (icon and size * icon[5]) or 38 * scale
 	-- 只移動圖格來對齊可見左緣，定位點與文字都保持不動。
-	base:SetPoint("BOTTOMLEFT", owner.IconAnchor, "BOTTOMLEFT", -inset, -46 * size / 256)
+	base:SetPoint("BOTTOMLEFT", owner.IconAnchor, "BOTTOMLEFT", -inset, -size * waterBottom)
 	health:ClearAllPoints()
 	
 	if icon then
 		health:SetSize(size, size * icon[4])
-		health:SetPoint("BOTTOMLEFT", owner.IconAnchor, "BOTTOMLEFT", -inset, size * icon[3] - 46 * size / 256)
-		-- 因為分成兩張圖，所以需要判斷用的圖格在哪張圖集上
-		base:SetTexture((icon[2] == 1 and G.media.specbase1) or G.media.specbase2)
+		health:SetPoint("BOTTOMLEFT", owner.IconAnchor, "BOTTOMLEFT", -inset, size * icon[3] - size * waterBottom)
+		base:SetTexture((icon[2] == 1 and G.media.specbase1) or G.media.specbase2)	-- 有兩張圖集，需要判斷用的圖格在哪張
 		base:SetTexCoord(unpack(icon[1]))
 
 		fill:SetTexture((icon[2] == 1 and G.media.specfill1) or G.media.specfill2)
@@ -147,7 +152,7 @@ local function SetSpecIcon(health, specID, class)
 		glow:SetTexCoord(unpack(icon[1]))
 	else
 		-- 專精與職業都沒有可用圖案時改用骷髏。
-		health:SetSize(size, size * 166 / 256)
+		health:SetSize(size, size * waterHeight)
 		health:SetPoint("BOTTOMLEFT", owner.IconAnchor, "BOTTOMLEFT", -inset, 0)
 
 		base:SetTexture(G.media.digitbase)
@@ -157,7 +162,7 @@ local function SetSpecIcon(health, specID, class)
 		fill:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
 		fill:SetVertexColor(unpack(C.HealthColor))
 		if prediction then
-			prediction:SetSize(size, size * 166 / 256)
+			prediction:SetSize(size, size * waterHeight)
 			prediction.Fill:SetTexture(G.media.digitfill)
 			prediction.Fill:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
 		end
@@ -173,7 +178,7 @@ end
 --===================================================--
 
 local function CreateOtherStyle(self, size)
-	local textureRatio = size / 256
+	local scale = size / 256
 
 	-- 三種框體共用固定點擊區：寬度為資訊區寬加圖示寬，高度與圖示相同。
 	self:SetSize(C.InfoWidth + size, size)
@@ -182,13 +187,13 @@ local function CreateOtherStyle(self, size)
 	-- 定位點固定在骷髏可見左緣、水位底部；文字往左延伸，圖示往右延伸。
 	local iconAnchor = CreateFrame("Frame", nil, self)
 	iconAnchor:SetSize(1, 1)
-	iconAnchor:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", -size + 38 * textureRatio, 46 * textureRatio)
+	iconAnchor:SetPoint("BOTTOMLEFT", self, "BOTTOMRIGHT", -size + 38 * scale, size * waterBottom)
 	self.IconAnchor = iconAnchor
 
 	-- 等高後的骷髏填色在 y=44..210，水位不計入黑邊與透明留白。
 	local health = CreateFrame("StatusBar", nil, self, "DisableUntrustedLayoutScriptsTemplate")
-	health:SetSize(size, 166 * textureRatio)
-	health:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -38 * textureRatio, 0)
+	health:SetSize(size, size * waterHeight)
+	health:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -38 * scale, 0)
 	health:SetOrientation("VERTICAL")
 	health:SetReverseFill(false)
 	health:SetStatusBarTexture(G.media.blank)
@@ -205,9 +210,10 @@ local function CreateOtherStyle(self, size)
 
 	local base = health:CreateTexture(nil, "BACKGROUND")
 	base:SetSize(size, size)
-	base:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -38 * textureRatio, -46 * textureRatio)
+	base:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -38 * scale, -size * waterBottom)
 	base:SetTexture(G.media.digitbase)
 	base:SetSpriteSheetCell(G.HealthIconCells.skull, 4, 4)
+
 	-- 填色固定跟隨完整底圖，血量下降時只裁切，不壓縮圖案。
 	local fill = clip:CreateTexture(nil, "ARTWORK")
 	fill:SetAllPoints(base)
@@ -228,7 +234,7 @@ local function CreateOtherStyle(self, size)
 	-- 圖格維持完整尺寸，各張圖案的可見左緣都對齊定位點。較窄的狀態圖示預先往左靠攏，切換時不移動文字。
 	local death = health:CreateTexture(nil, "ARTWORK")
 	death:SetSize(size, size)
-	death:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -statusTextInset.death * textureRatio, -46 * textureRatio)
+	death:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -statusTextInset.death * scale, -size * waterBottom)
 	death:SetTexture(G.media.digitbase)
 	death:SetSpriteSheetCell(G.HealthIconCells.death, 4, 4)
 	death:Hide()
@@ -241,18 +247,34 @@ local function CreateOtherStyle(self, size)
 	deathGlow:SetBlendMode("BLEND")
 	deathGlow:Hide()
 	death.Glow = deathGlow
-	health.Status = {death = death}
+
+	-- 離線圖示與柔光保持完整尺寸，不受血量水位裁切。
+	local offline = health:CreateTexture(nil, "ARTWORK")
+	offline:SetSize(size, size)
+	offline:SetPoint("BOTTOMLEFT", iconAnchor, "BOTTOMLEFT", -statusTextInset.offline * scale, -size * waterBottom)
+	offline:SetTexture(G.media.digitbase)
+	offline:SetSpriteSheetCell(G.HealthIconCells.offline, 4, 4)
+	offline:Hide()
+
+	local offlineGlow = health:CreateTexture(nil, "BACKGROUND", nil, -1)
+	offlineGlow:SetAllPoints(offline)
+	offlineGlow:SetTexture(G.media.digitglow)
+	offlineGlow:SetSpriteSheetCell(G.HealthIconCells.offline, 4, 4)
+	offlineGlow:SetVertexColor(0, 0, 0)
+	offlineGlow:SetBlendMode("BLEND")
+	offlineGlow:Hide()
+	offline.Glow = offlineGlow
+
+	health.Status = {death = death, offline = offline}
 	health.PostUpdate = PostUpdateHealth
-	health.IconSize, health.LayoutOwner = size, self
+	health.IconSize, health.Owner = size, self
 	self.Health = health
 
-	-- 資訊區：名字與施法條定位在主框體上。
+	-- 資訊區：定位框也是名字與施法條的位置
 	local info = CreateFrame("Frame", nil, self)
 	info:SetSize(C.InfoWidth, nameHeight)
-	self.Info = info
 	info:SetPoint("BOTTOMRIGHT", iconAnchor, "BOTTOMLEFT", -iconGap, textHeight + textLineGap)
-
-	-- Tags
+	self.Info = info
 
 	local value = F.CreateText(info, G.OtherFS, "RIGHT")
 	value:SetSize(0, textHeight)
@@ -272,8 +294,6 @@ local function CreateOtherStyle(self, size)
 	self.Name = name
 	self:Tag(name, "[hankk:namecolor][hankk:name]|r")
 
-	-- Elements
-
 	-- 隊友標記放在名字旁，首領與競技場標記維持骷髏上的位置。
 	local raidIcon = info:CreateTexture(nil, "OVERLAY", nil, 4)
 	raidIcon:SetSize(C.RaidIconSize, C.RaidIconSize)
@@ -288,7 +308,7 @@ local function CreateOtherStyle(self, size)
 end
 
 --===================================================--
--- Unit-specific creation / 各單位建立入口
+-- Boss frames / 首領框架
 --===================================================--
 
 local function CreateBossStyle(self)
@@ -303,7 +323,6 @@ local function CreateBossStyle(self)
 
 	-- Castbar
 	self.Info:SetFrameLevel(self:GetFrameLevel() + 4)
-	-- 固定施法區覆蓋名字，不再隨狀態圖示或團隊標記移動。
 	T.CreateOtherCastbar(self, C.InfoWidth, nameHeight + 2, self.Info)
 	self.Castbar:SetPoint("LEFT", self.Info, "LEFT", 1, 0)
 end
@@ -316,13 +335,16 @@ local function PostUpdateArenaColor(health, _, color)
 	health:SetStatusBarColor(1, 1, 1, 0)
 end
 
--- 對手出場前，由暴雪的顯示工具依受限專精編號提供職業色。
--- 舊版沒有此工具、遊戲 PvP 設定關閉或未回報專精時，骷髏維持橙色。
+--===================================================--
+-- Arena frames / 競技場框架
+--===================================================--
+
+-- 對手出場前，嘗試提供職業顏色，未獲取得顯示橙色。
 local function UpdateArenaPreparationColor(health)
 	health:SetStatusBarColor(1, 1, 1, 0)
 	if UnitFrameUtil and UnitFrameUtil.GetArenaOpponentSpecDisplayInfo
 		and GetCVarBool("pvpFramesDisplayClassColor") then
-		local info = UnitFrameUtil.GetArenaOpponentSpecDisplayInfo(health.LayoutOwner.ArenaIndex)
+		local info = UnitFrameUtil.GetArenaOpponentSpecDisplayInfo(health.Owner.ArenaIndex)
 		local r, g, b = unpack(C.HealthColor)
 		health.Fill:SetVertexColor(
 			C_CurveUtil.EvaluateColorValueFromBoolean(info.hasSpec, info.barColorR, r),
@@ -363,11 +385,8 @@ local function CreateArenaStyle(self, unit)
 end
 
 --===================================================--
--- Party frames / 隊友框體
+-- Party frames / 隊伍框架
 --===================================================--
-
-local partyCount = 4
-local partyGap = 6
 
 -- 隊友框建立前，先註冊 party1～4 的專精查詢。
 do
@@ -554,7 +573,6 @@ do
 		end
 	end
 
-	-- 元素啟停交給官方核心；共用查詢器不呼叫 ClearInspectPlayer 清除其他插件的資料。
 	oUF:AddElement("HankkPartySpec", Update, Enable, Disable)
 end
 
@@ -569,13 +587,11 @@ local function PostUpdatePartyThreat(element, unit, status, color)
 end
 
 local function CreatePartyStyle(self, unit)
-	-- 法力標籤固定用這位隊友判斷職責，載具替換顯示單位時不改查載具職責。
 	self.PartyUnit = unit
 	self.mystyle = "party"
 	CreateOtherStyle(self, C.PartySize)
 
-	-- Elements
-	-- 隊友標記顯示時才讓名字左移；隊友沒有施法條需要一起調整。
+	-- 有團隊標記時名字左移
 	local raidIcon = self.RaidTargetIndicator
 	hooksecurefunc(raidIcon, "Show", function()
 		self.Name:SetPoint("BOTTOMRIGHT", self.Info, "BOTTOMRIGHT", -C.RaidIconSize - textGap, 0)
@@ -589,7 +605,7 @@ local function CreatePartyStyle(self, unit)
 	if F.GetHankkOption("HealPrediction") then
 		local size = health.IconSize
 		local prediction = CreateFrame("StatusBar", nil, health, "DisableUntrustedLayoutScriptsTemplate")
-		prediction:SetSize(size, 166 * size / 256)
+		prediction:SetSize(size, size * waterHeight)
 		prediction:SetPoint("BOTTOMLEFT", health:GetStatusBarTexture(), "TOPLEFT", 0, 0)
 		prediction:SetOrientation("VERTICAL")
 		prediction:SetReverseFill(false)
@@ -615,23 +631,6 @@ local function CreatePartyStyle(self, unit)
 		health.incomingHealOverflow = 1
 	end
 
-	-- 沿用死亡與放魂的十字架，僅為隊友補上固定大小、不受水位裁切的離線圖示。
-	local offline = health:CreateTexture(nil, "ARTWORK")
-	offline:SetSize(health.IconSize, health.IconSize)
-	offline:SetPoint("BOTTOMLEFT", self.IconAnchor, "BOTTOMLEFT",
-		-statusTextInset.offline * health.IconSize / 256, -46 * health.IconSize / 256)
-	offline:SetTexture(G.media.digitbase)
-	offline:SetSpriteSheetCell(G.HealthIconCells.offline, 4, 4)
-	offline:Hide()
-	local offlineGlow = health:CreateTexture(nil, "BACKGROUND", nil, -1)
-	offlineGlow:SetAllPoints(offline)
-	offlineGlow:SetTexture(G.media.digitglow)
-	offlineGlow:SetSpriteSheetCell(G.HealthIconCells.offline, 4, 4)
-	offlineGlow:SetVertexColor(0, 0, 0)
-	offlineGlow:SetBlendMode("BLEND")
-	offlineGlow:Hide()
-	offline.Glow = offlineGlow
-	health.Status.offline = offline
 	T.CreatePartyAuras(self)
 
 	-- Tags
@@ -640,14 +639,17 @@ local function CreatePartyStyle(self, unit)
 	self.PowerValue:Hide()
 	self:Tag(self.PowerValue, "[hankk:partypower<$ ||]")
 
-	-- 職責改變時才切換法力文字；整框刷新亦先同步固定隊友的職責。
+	-- 職責改變時，判斷法力文字顯隱並更新 tag。
 	local function UpdatePartyPower(self, event)
 		local power = self.PowerValue
-		local shown = UnitGroupRolesAssigned(self.PartyUnit) == "HEALER"
+		local shown = (UnitGroupRolesAssigned(self.PartyUnit) == "HEALER")
 		power.enabled = shown
 		power:SetShown(shown)
-		if not shown then power:SetText("")
-		elseif event then power:UpdateTag() end
+		if not shown then
+			power:SetText("")
+		elseif event then
+			power:UpdateTag()
+		end
 	end
 	self:RegisterEvent("GROUP_ROSTER_UPDATE", UpdatePartyPower, true)
 	self:RegisterEvent("PLAYER_ROLES_ASSIGNED", UpdatePartyPower, true)
@@ -655,8 +657,6 @@ local function CreatePartyStyle(self, unit)
 	self.PreUpdate = function(self) UpdatePartyPower(self) end
 	UpdatePartyPower(self, "Init")
 
-	-- Elements
-	-- 仇恨更新交給 oUF；指示器隱藏時，圖示柔光恢復黑色。
 	if F.GetHankkOption("PartyThreat") then
 		local indicator = CreateFrame("Frame", nil, self)
 		indicator:EnableMouse(false)
@@ -667,14 +667,12 @@ local function CreatePartyStyle(self, unit)
 		self.ThreatIndicator = indicator
 	end
 
-	-- 職責圖示放回框體右下角，不進入血量裁切層。
 	local role = self.Info:CreateTexture(nil, "OVERLAY")
 	role:SetSize(28, 28)
 	role:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", -4, 8)
 	role:SetDesaturated(true)
 	role:SetTexCoord(0, 1, 0, 1)
 	role:Hide()
-	-- 替換材質，舊路徑則由 callback 依官方提供的公開職責換回圖案。
 	role.tankAtlas = G.media.role_tank
 	role.healerAtlas = G.media.role_healer
 	role.damageAtlas = G.media.role_dps
@@ -744,6 +742,9 @@ oUF:Factory(function(self)
 	self:RegisterStyle("HankkParty", CreatePartyStyle)
 
 	if F.GetHankkOption("Party") then
+		local partyCount = 4
+		local partyGap = 6
+
 		local group = CreateFrame("Frame", "oUF_HankkParty", UIParent, "SecureHandlerStateTemplate")
 		local groupWidth = C.InfoWidth + C.PartySize
 		local groupHeight = partyCount * C.PartySize + (partyCount - 1) * partyGap

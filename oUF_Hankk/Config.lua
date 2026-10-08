@@ -26,7 +26,6 @@ local MediaFolder = G.MediaFolder
 	G.ValueFS = 20		-- Health/power value / 血量與能量數值
 
 	G.OtherFS = 20		-- Party/Boss/Arena / 首領、競技場及隊友
-	G.OtherTextLineGap = 2	-- Gap between the two text rows / 名字與數值兩行的間距
 	G.SubFS = 16		-- Pet and ToT/ToTT/FoT/FoTT / 寵物/目標的目標鏈/焦點的目標鏈
 
 	G.AuraFS = 14		-- Aura / 光環

@@ -3,7 +3,7 @@ local C, F, G, T = unpack(ns)
 local oUF = ns.oUF
 
 -- 名字上方的光環從定位點起算，留出兩行字高、行距與陰影空間。
-local otherNameAuraY = G.OtherFS * 2 + G.OtherTextLineGap
+local otherNameAuraY = G.OtherFS * 2 + 4
 
 --===================================================--
 -- Time format / 時間格式
